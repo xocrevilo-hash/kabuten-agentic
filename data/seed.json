@@ -1,0 +1,168 @@
+{
+  "companies": [
+    {
+      "id": "8035",
+      "name": "Tokyo Electron",
+      "name_jp": "東京エレクトロン",
+      "ticker_full": "8035.T",
+      "sector": "Semiconductor Equipment — Etch, Deposition, Coater/Developer",
+      "investment_view": "bullish",
+      "conviction": "high",
+      "profile_json": {
+        "overview": "Tokyo Electron (TEL) is Japan's largest and the world's third-largest semiconductor equipment maker. Core products span etch systems, CVD/PVD deposition, coater/developers for photolithography, and cleaning systems. TEL is a key beneficiary of leading-edge node transitions and EUV adoption.",
+        "thesis": "TEL is positioned to capture outsized share of the AI-driven capex supercycle. Incremental order momentum is strong, driven by EUV-related deposition layers and advanced packaging demand. China exposure is a risk but manageable at current levels.",
+        "key_assumptions": [
+          "AI/HPC capex cycle sustains through FY2026-27",
+          "EUV multi-patterning drives incremental deposition TAM",
+          "China revenue remains at ~25% of sales without further restrictions",
+          "Etch market share gains continue vs. Lam Research"
+        ],
+        "risk_factors": [
+          "Escalation of US/Japan China export controls",
+          "Cyclical downturn in memory capex",
+          "Yen appreciation impacting competitiveness",
+          "Customer concentration risk (TSMC, Samsung)"
+        ]
+      },
+      "sweep_criteria_json": {
+        "sources": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"],
+        "focus": [
+          "Focus specifically on incremental order growth momentum and new business wins",
+          "Monitor China revenue exposure and any regulatory/sanctions developments",
+          "Track EUV-related deposition and coater/developer competitive positioning vs. ASML ecosystem"
+        ]
+      }
+    },
+    {
+      "id": "6146",
+      "name": "Disco Corporation",
+      "name_jp": "ディスコ",
+      "ticker_full": "6146.T",
+      "sector": "Semiconductor Equipment — Precision Cutting, Grinding, Polishing",
+      "investment_view": "neutral",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Disco Corporation is the global leader in precision cutting, grinding, and polishing equipment for semiconductor wafers. Their dicing saws, grinders, and laser processing machines are essential for back-end semiconductor manufacturing. Disco holds dominant market share in dicing (>70% globally).",
+        "thesis": "Disco is a high-quality compounder with dominant market share in precision back-end equipment. The advanced packaging megatrend (chiplets, HBM stacking) should drive structural demand growth. Valuation is full, limiting near-term upside despite strong fundamentals.",
+        "key_assumptions": [
+          "Advanced packaging adoption accelerates (chiplets, 3D stacking)",
+          "HBM demand drives incremental dicing and grinding volumes",
+          "Pricing power sustained given dominant market position",
+          "Consumables revenue provides earnings stability"
+        ],
+        "risk_factors": [
+          "Valuation premium vulnerable to any growth deceleration",
+          "Customer capex delays in packaging equipment",
+          "Emerging competition in laser-based dicing",
+          "Yen strength impacting overseas competitiveness"
+        ]
+      },
+      "sweep_criteria_json": {
+        "sources": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"],
+        "focus": [
+          "Monitor advanced packaging order trends, particularly for AI chip dicing and grinding",
+          "Track HBM (High Bandwidth Memory) related demand and Disco's positioning",
+          "Watch for margin trends and any pricing power signals in precision cutting equipment"
+        ]
+      }
+    },
+    {
+      "id": "6857",
+      "name": "Advantest",
+      "name_jp": "アドバンテスト",
+      "ticker_full": "6857.T",
+      "sector": "Semiconductor Equipment — Test Systems (SoC, Memory, SSD)",
+      "investment_view": "bullish",
+      "conviction": "high",
+      "profile_json": {
+        "overview": "Advantest is the world's leading semiconductor test equipment maker, competing primarily with Teradyne. Core products include SoC testers (V93000 platform), memory testers, and SSD test systems. Advantest is the dominant supplier for AI/HPC chip testing.",
+        "thesis": "Advantest is the primary beneficiary of rising test intensity driven by AI chip complexity. The V93000 platform is the industry standard for advanced SoC testing. HBM test demand provides a second structural growth vector. Order momentum is inflecting positively.",
+        "key_assumptions": [
+          "AI/HPC chip complexity drives higher test time per device",
+          "HBM test systems become a material revenue contributor",
+          "V93000 platform maintains competitive moat vs. Teradyne",
+          "Memory test recovery adds to AI-driven SoC test demand"
+        ],
+        "risk_factors": [
+          "Teradyne competitive response in SoC test",
+          "Customer pushback on test cost per device",
+          "China restrictions impacting memory test shipments",
+          "Cyclical memory test demand volatility"
+        ]
+      },
+      "sweep_criteria_json": {
+        "sources": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"],
+        "focus": [
+          "Track AI/HPC-related test demand, particularly for advanced SoC and HBM test systems",
+          "Monitor new platform wins and competitive dynamics vs. Teradyne",
+          "Watch for order intake trends and any signals on test intensity per transistor"
+        ]
+      }
+    }
+  ],
+  "action_log": [
+    {
+      "company_id": "8035",
+      "timestamp": "2026-02-06T07:12:00Z",
+      "severity": "no_change",
+      "summary": "Sweep completed: no change to Investment View",
+      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+    },
+    {
+      "company_id": "6146",
+      "timestamp": "2026-02-06T07:14:00Z",
+      "severity": "notable",
+      "summary": "Q3 orders above consensus — monitoring for follow-through",
+      "detail_json": {
+        "what_happened": "Disco reported Q3 FY2025 orders of JPY 72.8B, approximately 8% above consensus estimates of JPY 67.5B. Strength was broad-based across dicing and grinding segments.",
+        "why_it_matters": "Above-consensus orders suggest advanced packaging demand may be accelerating faster than expected. If sustained, this could warrant an upward revision to our neutral thesis.",
+        "recommended_action": "Monitor next quarter order data and management commentary. No change to investment view yet — single quarter beat not sufficient to shift thesis.",
+        "confidence": "medium",
+        "sources": ["company_ir", "reuters_nikkei"]
+      },
+      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+    },
+    {
+      "company_id": "6857",
+      "timestamp": "2026-02-06T07:15:00Z",
+      "severity": "material",
+      "summary": "New HBM test platform win at SK Hynix — validates test intensity thesis",
+      "detail_json": {
+        "what_happened": "Industry sources indicate Advantest has secured a major HBM4 test platform win at SK Hynix, displacing an incumbent test solution. The win is estimated at JPY 15-20B in incremental revenue over FY2026-27.",
+        "why_it_matters": "This directly validates our key assumption on HBM test becoming a material revenue contributor. The displacement win also demonstrates Advantest's competitive moat in advanced memory test.",
+        "recommended_action": "Update earnings model to reflect HBM test revenue upside. Consider raising conviction from high to very high. Flag for manual review of valuation impact.",
+        "confidence": "high",
+        "sources": ["industry", "reuters_nikkei", "twitter"]
+      },
+      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+    },
+    {
+      "company_id": "8035",
+      "timestamp": "2026-02-05T07:10:00Z",
+      "severity": "notable",
+      "summary": "New US export control guidance — limited impact on TEL operations",
+      "detail_json": {
+        "what_happened": "US Commerce Department issued updated guidance on semiconductor equipment export controls to China. The new rules clarify existing restrictions but do not significantly expand the scope of controlled items relevant to TEL's product portfolio.",
+        "why_it_matters": "China revenue risk remains a key assumption in the thesis. While this update is not material, it signals continued regulatory attention. TEL's China revenue (~25% of sales) remains exposed to potential future escalation.",
+        "recommended_action": "No change to investment view. Continue monitoring for any escalation in Japan-specific export controls.",
+        "confidence": "medium",
+        "sources": ["reuters_nikkei", "industry"]
+      },
+      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+    },
+    {
+      "company_id": "6857",
+      "timestamp": "2026-02-05T07:13:00Z",
+      "severity": "no_change",
+      "summary": "Sweep completed: no change to Investment View",
+      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+    },
+    {
+      "company_id": "6146",
+      "timestamp": "2026-02-05T07:11:00Z",
+      "severity": "no_change",
+      "summary": "Sweep completed: no change to Investment View",
+      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+    }
+  ]
+}
