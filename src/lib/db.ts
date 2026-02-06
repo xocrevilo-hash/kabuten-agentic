@@ -150,6 +150,19 @@ export async function getLatestSweepData(companyId: string, source: string) {
   return rows[0] || null;
 }
 
+export async function updateSweepCriteria(
+  companyId: string,
+  criteria: { sources: string[]; focus: string[] }
+) {
+  const sql = getDb();
+  await sql`
+    UPDATE companies
+    SET sweep_criteria_json = ${JSON.stringify(criteria)},
+        updated_at = NOW()
+    WHERE id = ${companyId}
+  `;
+}
+
 export async function getActionLog(companyId?: string, limit = 20) {
   const sql = getDb();
   if (companyId) {

@@ -3,6 +3,7 @@ import Link from "next/link";
 import KabutenLogo from "@/components/KabutenLogo";
 import InvestmentView from "@/components/InvestmentView";
 import SweepCriteria from "@/components/SweepCriteria";
+import ManualSweepButton from "@/components/ManualSweepButton";
 import ActionLog from "@/components/ActionLog";
 import { fetchCompany, fetchActionLog } from "@/lib/data";
 
@@ -43,7 +44,7 @@ export default async function CompanyPage({
 
       {/* Page Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Top Section: Investment View + Sweep Criteria */}
+        {/* Top Section: Investment View + Sweep Criteria + Manual Sweep */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
             <InvestmentView
@@ -55,10 +56,15 @@ export default async function CompanyPage({
               lastUpdated={company.updated_at}
             />
           </div>
-          <div>
+          <div className="space-y-6">
             <SweepCriteria
+              companyId={company.id}
               sources={criteria.sources}
               focus={criteria.focus}
+            />
+            <ManualSweepButton
+              companyId={company.id}
+              companyName={company.name}
             />
           </div>
         </div>
@@ -99,6 +105,34 @@ export default async function CompanyPage({
               <div>
                 <dt className="text-xs text-gray-500">Conviction</dt>
                 <dd className="text-sm font-semibold text-gray-900 capitalize">{company.conviction}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-gray-500">Last Sweep</dt>
+                <dd className="text-sm font-medium text-gray-900">
+                  {company.last_sweep_at
+                    ? new Date(company.last_sweep_at).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "Not yet run"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-gray-500">Last Material Finding</dt>
+                <dd className="text-sm font-medium text-gray-900">
+                  {company.last_material_at
+                    ? new Date(company.last_material_at).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "None"}
+                </dd>
               </div>
             </dl>
           </div>
