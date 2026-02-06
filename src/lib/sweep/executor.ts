@@ -44,38 +44,52 @@ async function fetchAllSources(
 
   const results: { source: string; content: string; isNew: boolean }[] = [];
 
-  // Run enabled fetchers in parallel
-  const activeFetchers = enabledSources
-    .filter((s) => fetchers[s])
-    .map(async (source) => {
-      try {
-        const content = await fetchers[source]();
-        const contentHash = hashContent(content);
+  // Separate into direct fetchers (no Claude API) and web search fetchers (use Claude API)
+  const directSources = ["company_ir", "edinet"];
+  const webSearchSources = ["reuters_nikkei", "twitter", "tradingview", "industry"];
 
-        // Check if content is new compared to last sweep
-        const lastSweep = await getLatestSweepData(companyId, source);
-        const isNew = !lastSweep || lastSweep.content_hash !== contentHash;
+  async function fetchAndStore(source: string) {
+    try {
+      const content = await fetchers[source]();
+      const contentHash = hashContent(content);
+      const lastSweep = await getLatestSweepData(companyId, source);
+      const isNew = !lastSweep || lastSweep.content_hash !== contentHash;
 
-        // Store the sweep data
-        await insertSweepData({
-          companyId,
-          source,
-          contentHash,
-          content: content.slice(0, 50000), // Cap storage at 50k chars
-          isNew,
-        });
+      await insertSweepData({
+        companyId,
+        source,
+        contentHash,
+        content: content.slice(0, 50000),
+        isNew,
+      });
 
-        results.push({ source, content, isNew });
-      } catch (error) {
-        results.push({
-          source,
-          content: `Error fetching ${source}: ${error instanceof Error ? error.message : String(error)}`,
-          isNew: false,
-        });
-      }
-    });
+      // Truncate content for analysis context to manage token usage
+      results.push({ source, content: content.slice(0, 4000), isNew });
+    } catch (error) {
+      results.push({
+        source,
+        content: `Error fetching ${source}: ${error instanceof Error ? error.message : String(error)}`,
+        isNew: false,
+      });
+    }
+  }
 
-  await Promise.all(activeFetchers);
+  // Run direct fetchers in parallel (no API rate limit concerns)
+  const directActive = enabledSources
+    .filter((s) => directSources.includes(s) && fetchers[s])
+    .map(fetchAndStore);
+  await Promise.all(directActive);
+
+  // Run web search fetchers sequentially with delays to respect rate limits
+  const webActive = enabledSources.filter(
+    (s) => webSearchSources.includes(s) && fetchers[s]
+  );
+  for (const source of webActive) {
+    await fetchAndStore(source);
+    // Small delay between web search calls to stay within rate limits
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
   return results;
 }
 

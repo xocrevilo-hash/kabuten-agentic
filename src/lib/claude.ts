@@ -29,12 +29,12 @@ export interface WebSearchResult {
 export async function webSearch(query: string): Promise<string> {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-5-20250929",
-    max_tokens: 4096,
-    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
+    max_tokens: 2048,
+    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }],
     messages: [
       {
         role: "user",
-        content: `Search for the following and provide a concise summary of what you find. Focus on the most recent and relevant information.\n\nSearch query: ${query}`,
+        content: `Search for: ${query}\n\nProvide a brief summary (under 500 words) of the most relevant recent findings.`,
       },
     ],
   });
