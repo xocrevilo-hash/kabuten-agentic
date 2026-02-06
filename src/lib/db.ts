@@ -69,6 +69,87 @@ export async function getCompany(id: string) {
   return rows[0] || null;
 }
 
+export async function insertActionLog(entry: {
+  companyId: string;
+  severity: string;
+  summary: string;
+  detailJson: Record<string, unknown> | null;
+  sourcesChecked: string[];
+  rawAiResponse: string;
+}) {
+  const sql = getDb();
+  await sql`
+    INSERT INTO action_log (company_id, timestamp, severity, summary, detail_json, sources_checked, raw_ai_response)
+    VALUES (
+      ${entry.companyId},
+      NOW(),
+      ${entry.severity},
+      ${entry.summary},
+      ${entry.detailJson ? JSON.stringify(entry.detailJson) : null},
+      ${JSON.stringify(entry.sourcesChecked)},
+      ${entry.rawAiResponse}
+    )
+  `;
+}
+
+export async function updateCompanyAfterSweep(
+  companyId: string,
+  updates: {
+    profileJson?: Record<string, unknown>;
+    investmentView?: string;
+    conviction?: string;
+    isMaterial?: boolean;
+  }
+) {
+  const sql = getDb();
+
+  if (updates.profileJson) {
+    await sql`
+      UPDATE companies
+      SET profile_json = ${JSON.stringify(updates.profileJson)},
+          investment_view = COALESCE(${updates.investmentView || null}, investment_view),
+          conviction = COALESCE(${updates.conviction || null}, conviction),
+          last_sweep_at = NOW(),
+          last_material_at = CASE WHEN ${updates.isMaterial || false} THEN NOW() ELSE last_material_at END,
+          updated_at = NOW()
+      WHERE id = ${companyId}
+    `;
+  } else {
+    await sql`
+      UPDATE companies
+      SET last_sweep_at = NOW(),
+          last_material_at = CASE WHEN ${updates.isMaterial || false} THEN NOW() ELSE last_material_at END,
+          updated_at = NOW()
+      WHERE id = ${companyId}
+    `;
+  }
+}
+
+export async function insertSweepData(entry: {
+  companyId: string;
+  source: string;
+  contentHash: string;
+  content: string;
+  isNew: boolean;
+}) {
+  const sql = getDb();
+  await sql`
+    INSERT INTO sweep_data (company_id, source, content_hash, content, is_new)
+    VALUES (${entry.companyId}, ${entry.source}, ${entry.contentHash}, ${entry.content}, ${entry.isNew})
+  `;
+}
+
+export async function getLatestSweepData(companyId: string, source: string) {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT content_hash FROM sweep_data
+    WHERE company_id = ${companyId} AND source = ${source}
+    ORDER BY fetched_at DESC
+    LIMIT 1
+  `;
+  return rows[0] || null;
+}
+
 export async function getActionLog(companyId?: string, limit = 20) {
   const sql = getDb();
   if (companyId) {
