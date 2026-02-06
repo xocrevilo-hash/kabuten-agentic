@@ -1,6 +1,34 @@
 import seedData from "../../data/seed.json";
 
 // Types matching our database schema
+export interface EarningsRow {
+  period: string;
+  revenue: string;
+  operatingProfit: string;
+  netProfit: string;
+  eps: string;
+  isEstimate?: boolean;
+}
+
+export interface Segment {
+  name: string;
+  revenue: string;
+  share: string;
+}
+
+export interface ValuationMetric {
+  label: string;
+  current: string;
+  sectorAvg?: string;
+}
+
+export interface ValuationScenario {
+  label: string;
+  targetPrice: string;
+  methodology: string;
+  upside: string;
+}
+
 export interface Company {
   id: string;
   name: string;
@@ -12,6 +40,13 @@ export interface Company {
     thesis: string;
     key_assumptions: string[];
     risk_factors: string[];
+    earnings?: EarningsRow[];
+    segments?: Segment[];
+    valuation_metrics?: ValuationMetric[];
+    valuation_scenarios?: ValuationScenario[];
+    current_price?: string;
+    fair_value?: string;
+    valuation_notes?: string;
   };
   sweep_criteria_json: {
     sources: string[];

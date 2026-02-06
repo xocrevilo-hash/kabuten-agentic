@@ -22,7 +22,32 @@
           "Cyclical downturn in memory capex",
           "Yen appreciation impacting competitiveness",
           "Customer concentration risk (TSMC, Samsung)"
-        ]
+        ],
+        "earnings": [
+          { "period": "FY2024", "revenue": "1,830B", "operatingProfit": "432B", "netProfit": "316B", "eps": "671" },
+          { "period": "FY2025", "revenue": "2,120B", "operatingProfit": "545B", "netProfit": "398B", "eps": "845" },
+          { "period": "FY2026E", "revenue": "2,450B", "operatingProfit": "655B", "netProfit": "478B", "eps": "1,015", "isEstimate": true },
+          { "period": "FY2027E", "revenue": "2,680B", "operatingProfit": "735B", "netProfit": "536B", "eps": "1,138", "isEstimate": true }
+        ],
+        "segments": [
+          { "name": "SPE (Etch, Deposition)", "revenue": "1,480B", "share": "70%" },
+          { "name": "Coater/Developer", "revenue": "425B", "share": "20%" },
+          { "name": "Other / FPD", "revenue": "215B", "share": "10%" }
+        ],
+        "current_price": "23,450",
+        "fair_value": "28,000",
+        "valuation_metrics": [
+          { "label": "P/E (FY26E)", "current": "23.1x", "sectorAvg": "28x" },
+          { "label": "EV/EBITDA", "current": "15.8x", "sectorAvg": "20x" },
+          { "label": "P/B", "current": "4.2x" },
+          { "label": "Div. Yield", "current": "1.8%" }
+        ],
+        "valuation_scenarios": [
+          { "label": "Bull Case", "targetPrice": "32,000", "methodology": "30x FY27E EPS on sustained AI capex cycle", "upside": "+36%" },
+          { "label": "Base Case", "targetPrice": "28,000", "methodology": "25x FY27E EPS with moderate growth", "upside": "+19%" },
+          { "label": "Bear Case", "targetPrice": "18,500", "methodology": "18x FY26E EPS on China export control escalation", "upside": "-21%" }
+        ],
+        "valuation_notes": "TEL trades at a discount to ASML (35x) and Lam Research (28x) on forward P/E. Discount partly reflects China exposure risk. Upside catalysts: order momentum, China risk de-escalation."
       },
       "sweep_criteria_json": {
         "sources": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"],
@@ -55,7 +80,33 @@
           "Customer capex delays in packaging equipment",
           "Emerging competition in laser-based dicing",
           "Yen strength impacting overseas competitiveness"
-        ]
+        ],
+        "earnings": [
+          { "period": "FY2024", "revenue": "312B", "operatingProfit": "108B", "netProfit": "82B", "eps": "760" },
+          { "period": "FY2025", "revenue": "345B", "operatingProfit": "122B", "netProfit": "93B", "eps": "862" },
+          { "period": "FY2026E", "revenue": "385B", "operatingProfit": "140B", "netProfit": "106B", "eps": "982", "isEstimate": true },
+          { "period": "FY2027E", "revenue": "420B", "operatingProfit": "158B", "netProfit": "120B", "eps": "1,112", "isEstimate": true }
+        ],
+        "segments": [
+          { "name": "Precision Cutting", "revenue": "165B", "share": "48%" },
+          { "name": "Precision Grinding", "revenue": "115B", "share": "33%" },
+          { "name": "Precision Polishing", "revenue": "40B", "share": "12%" },
+          { "name": "Consumables & Other", "revenue": "25B", "share": "7%" }
+        ],
+        "current_price": "42,800",
+        "fair_value": "44,000",
+        "valuation_metrics": [
+          { "label": "P/E (FY26E)", "current": "43.6x", "sectorAvg": "28x" },
+          { "label": "EV/EBITDA", "current": "28.5x", "sectorAvg": "20x" },
+          { "label": "P/B", "current": "8.1x" },
+          { "label": "Div. Yield", "current": "0.9%" }
+        ],
+        "valuation_scenarios": [
+          { "label": "Bull Case", "targetPrice": "55,000", "methodology": "50x FY27E EPS on HBM/packaging supercycle", "upside": "+28%" },
+          { "label": "Base Case", "targetPrice": "44,000", "methodology": "40x FY27E EPS with steady growth", "upside": "+3%" },
+          { "label": "Bear Case", "targetPrice": "32,000", "methodology": "30x FY26E EPS on packaging capex delay", "upside": "-25%" }
+        ],
+        "valuation_notes": "Disco commands a premium multiple reflecting dominant market position (>70% dicing share) and high recurring consumables revenue. Limited near-term upside at current valuation; catalyst needed."
       },
       "sweep_criteria_json": {
         "sources": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"],
@@ -88,7 +139,33 @@
           "Customer pushback on test cost per device",
           "China restrictions impacting memory test shipments",
           "Cyclical memory test demand volatility"
-        ]
+        ],
+        "earnings": [
+          { "period": "FY2024", "revenue": "560B", "operatingProfit": "142B", "netProfit": "108B", "eps": "582" },
+          { "period": "FY2025", "revenue": "780B", "operatingProfit": "228B", "netProfit": "174B", "eps": "938" },
+          { "period": "FY2026E", "revenue": "1,070B", "operatingProfit": "354B", "netProfit": "270B", "eps": "1,455", "isEstimate": true },
+          { "period": "FY2027E", "revenue": "1,250B", "operatingProfit": "425B", "netProfit": "324B", "eps": "1,746", "isEstimate": true }
+        ],
+        "segments": [
+          { "name": "SoC Test (V93000)", "revenue": "520B", "share": "49%" },
+          { "name": "Memory Test", "revenue": "285B", "share": "27%" },
+          { "name": "SSD Test", "revenue": "160B", "share": "15%" },
+          { "name": "Services & Other", "revenue": "105B", "share": "9%" }
+        ],
+        "current_price": "8,450",
+        "fair_value": "10,500",
+        "valuation_metrics": [
+          { "label": "P/E (FY26E)", "current": "34.2x", "sectorAvg": "28x" },
+          { "label": "EV/EBITDA", "current": "22.1x", "sectorAvg": "20x" },
+          { "label": "P/B", "current": "6.8x" },
+          { "label": "Div. Yield", "current": "0.6%" }
+        ],
+        "valuation_scenarios": [
+          { "label": "Bull Case", "targetPrice": "13,000", "methodology": "38x FY27E EPS on AI test supercycle + HBM wins", "upside": "+54%" },
+          { "label": "Base Case", "targetPrice": "10,500", "methodology": "30x FY27E EPS with sustained growth", "upside": "+24%" },
+          { "label": "Bear Case", "targetPrice": "6,800", "methodology": "22x FY26E EPS on test demand normalization", "upside": "-20%" }
+        ],
+        "valuation_notes": "Advantest premium justified by structural AI test demand growth. V93000 platform dominance and HBM test wins provide multi-year visibility. Teradyne competitive risk is key monitor."
       },
       "sweep_criteria_json": {
         "sources": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"],

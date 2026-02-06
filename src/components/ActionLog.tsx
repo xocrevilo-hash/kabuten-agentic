@@ -16,7 +16,17 @@ interface ActionLogEntry {
     confidence?: string;
     sources?: string[];
   } | null;
+  sources_checked?: string[];
 }
+
+const SOURCE_LABELS: Record<string, string> = {
+  company_ir: "IR Page",
+  edinet: "EDINET",
+  reuters_nikkei: "News",
+  twitter: "X/Twitter",
+  tradingview: "Price",
+  industry: "Industry",
+};
 
 interface ActionLogProps {
   entries: ActionLogEntry[];
@@ -63,7 +73,7 @@ function LogEntry({
   showCompany: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const hasDetail = entry.detail_json && entry.severity !== "no_change";
+  const hasDetail = (entry.detail_json && entry.severity !== "no_change") || (entry.sources_checked && entry.sources_checked.length > 0);
 
   return (
     <div className="border-b border-gray-100 last:border-0">
@@ -104,47 +114,62 @@ function LogEntry({
         )}
       </button>
 
-      {expanded && entry.detail_json && (
+      {expanded && (
         <div className="px-4 pb-4 pl-10">
-          <div className="rounded-lg bg-gray-50 p-4 space-y-3 text-sm">
-            {entry.detail_json.what_happened && (
-              <div>
-                <span className="font-medium text-gray-600">What happened:</span>
-                <p className="text-gray-700 mt-0.5">{entry.detail_json.what_happened}</p>
-              </div>
-            )}
-            {entry.detail_json.why_it_matters && (
-              <div>
-                <span className="font-medium text-gray-600">Why it matters:</span>
-                <p className="text-gray-700 mt-0.5">{entry.detail_json.why_it_matters}</p>
-              </div>
-            )}
-            {entry.detail_json.recommended_action && (
-              <div>
-                <span className="font-medium text-gray-600">Recommended action:</span>
-                <p className="text-gray-700 mt-0.5">{entry.detail_json.recommended_action}</p>
-              </div>
-            )}
-            {entry.detail_json.confidence && (
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-600">Confidence:</span>
-                <span className="capitalize text-gray-700">{entry.detail_json.confidence}</span>
-              </div>
-            )}
-            {entry.detail_json.sources && entry.detail_json.sources.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-gray-600">Sources:</span>
-                {entry.detail_json.sources.map((s) => (
-                  <span
-                    key={s}
-                    className="text-xs bg-white border border-gray-200 px-2 py-0.5 rounded"
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+          {entry.detail_json && entry.severity !== "no_change" && (
+            <div className="rounded-lg bg-gray-50 p-4 space-y-3 text-sm mb-3">
+              {entry.detail_json.what_happened && (
+                <div>
+                  <span className="font-medium text-gray-600">What happened:</span>
+                  <p className="text-gray-700 mt-0.5">{entry.detail_json.what_happened}</p>
+                </div>
+              )}
+              {entry.detail_json.why_it_matters && (
+                <div>
+                  <span className="font-medium text-gray-600">Why it matters:</span>
+                  <p className="text-gray-700 mt-0.5">{entry.detail_json.why_it_matters}</p>
+                </div>
+              )}
+              {entry.detail_json.recommended_action && (
+                <div>
+                  <span className="font-medium text-gray-600">Recommended action:</span>
+                  <p className="text-gray-700 mt-0.5">{entry.detail_json.recommended_action}</p>
+                </div>
+              )}
+              {entry.detail_json.confidence && (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-600">Confidence:</span>
+                  <span className="capitalize text-gray-700">{entry.detail_json.confidence}</span>
+                </div>
+              )}
+              {entry.detail_json.sources && entry.detail_json.sources.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-gray-600">Sources:</span>
+                  {entry.detail_json.sources.map((s) => (
+                    <span
+                      key={s}
+                      className="text-xs bg-white border border-gray-200 px-2 py-0.5 rounded"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {entry.sources_checked && entry.sources_checked.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs text-gray-400">Checked:</span>
+              {entry.sources_checked.map((s) => (
+                <span
+                  key={s}
+                  className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded"
+                >
+                  {SOURCE_LABELS[s] || s}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

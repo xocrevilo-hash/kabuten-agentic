@@ -5,6 +5,9 @@ import InvestmentView from "@/components/InvestmentView";
 import SweepCriteria from "@/components/SweepCriteria";
 import ManualSweepButton from "@/components/ManualSweepButton";
 import ActionLog from "@/components/ActionLog";
+import SharePriceChart from "@/components/SharePriceChart";
+import EarningsModel from "@/components/EarningsModel";
+import ValuationBox from "@/components/ValuationBox";
 import { fetchCompany, fetchActionLog } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -69,7 +72,7 @@ export default async function CompanyPage({
           </div>
         </div>
 
-        {/* Key Info + Overview */}
+        {/* Key Info + Share Price Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
@@ -135,16 +138,39 @@ export default async function CompanyPage({
                 </dd>
               </div>
             </dl>
+
+            {/* Company Overview */}
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <h3 className="text-xs font-medium text-gray-500 uppercase mb-2">Overview</h3>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {profile.overview}
+              </p>
+            </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
-              Company Overview
-            </h2>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {profile.overview}
-            </p>
-          </div>
+          <SharePriceChart
+            ticker={company.ticker_full}
+            companyName={company.name}
+          />
+        </div>
+
+        {/* Earnings Model + Valuation */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {profile.earnings && profile.earnings.length > 0 && (
+            <EarningsModel
+              rows={profile.earnings}
+              segments={profile.segments}
+            />
+          )}
+          {profile.valuation_metrics && profile.valuation_scenarios && (
+            <ValuationBox
+              currentPrice={profile.current_price}
+              fairValue={profile.fair_value}
+              metrics={profile.valuation_metrics}
+              scenarios={profile.valuation_scenarios}
+              notes={profile.valuation_notes}
+            />
+          )}
         </div>
 
         {/* Action Log */}
