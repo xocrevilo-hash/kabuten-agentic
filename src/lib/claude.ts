@@ -136,10 +136,20 @@ For MATERIAL, fill in both detail and suggested_profile_updates with recommended
     .join("");
 
   try {
+    // Try direct parse first
     const parsed = JSON.parse(rawText) as SweepResult;
     return parsed;
   } catch {
-    // If parsing fails, return a safe default
+    // Try extracting JSON from markdown code fences or surrounding text
+    try {
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]) as SweepResult;
+        return parsed;
+      }
+    } catch {
+      // Fall through
+    }
     return {
       classification: "NO_CHANGE",
       summary: "Sweep completed: parsing error — defaulting to no change",
@@ -198,6 +208,14 @@ Respond ONLY with valid JSON (no markdown, no code fences):
   try {
     return JSON.parse(rawText);
   } catch {
+    try {
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch {
+      // Fall through
+    }
     return {
       updatedProfile: fullProfile,
       analysisNotes: "Deep analysis parsing failed. Profile unchanged.",
