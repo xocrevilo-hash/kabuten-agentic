@@ -23,18 +23,18 @@ export default async function Home() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 pb-16">
+      <div className="max-w-7xl mx-auto px-4 pb-16">
         {/* Action Log */}
         <div className="mb-10">
           <ActionLog
             entries={actionLog}
-            title="Agentic Action Log"
+            title="Analyst Agent Log"
             showCompany={true}
           />
         </div>
 
         {/* Company Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {companies.map((company) => (
             <CompanyCard
               key={company.id}

@@ -2,19 +2,27 @@
  * Checks EDINET for new regulatory filings.
  * EDINET is Japan's EDGAR equivalent — hosts yuho (annual), quarterly reports.
  * Uses the EDINET API v2 to search for recent filings.
+ *
+ * NOTE: EDINET only covers Japanese-listed companies (TSE).
+ * Non-Japanese companies (TWSE, KRX, SZSE, HKEX, NYSE) are not in EDINET.
  */
 
-// EDINET company codes (edinetCode) for each company
+// EDINET company codes (edinetCode) for Japanese-listed companies only
 const EDINET_CODES: Record<string, string> = {
   "8035": "E01888", // Tokyo Electron
   "6146": "E01622", // Disco Corporation
   "6857": "E01972", // Advantest
+  "6501": "E01737", // Hitachi
+  "6920": "E02tried", // Lasertec — placeholder, needs verification
+  "6752": "E01772", // Panasonic
+  "6323": "E02606", // Rorze
+  "7735": "E01846", // Screen Holdings
 };
 
 export async function fetchEdinet(companyId: string): Promise<string> {
   const edinetCode = EDINET_CODES[companyId];
   if (!edinetCode) {
-    return `No EDINET code configured for company ${companyId}`;
+    return `No EDINET code for company ${companyId} (EDINET covers Japanese-listed companies only)`;
   }
 
   try {

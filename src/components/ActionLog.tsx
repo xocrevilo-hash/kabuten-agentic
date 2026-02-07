@@ -38,8 +38,8 @@ function SeverityDot({ severity }: { severity: string }) {
   if (severity === "material") {
     return <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" title="Material" />;
   }
-  if (severity === "notable") {
-    return <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" title="Notable" />;
+  if (severity === "notable" || severity === "incremental") {
+    return <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" title="Incremental" />;
   }
   return <span className="inline-block h-2.5 w-2.5 rounded-full bg-gray-300" title="No Change" />;
 }
@@ -48,8 +48,8 @@ function SeverityLabel({ severity }: { severity: string }) {
   if (severity === "material") {
     return <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Material</span>;
   }
-  if (severity === "notable") {
-    return <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Notable</span>;
+  if (severity === "notable" || severity === "incremental") {
+    return <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Incremental</span>;
   }
   return <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">No Change</span>;
 }
@@ -176,7 +176,7 @@ function LogEntry({
   );
 }
 
-export default function ActionLog({ entries, title = "Agentic Action Log", showCompany = true }: ActionLogProps) {
+export default function ActionLog({ entries, title = "Analyst Agent Log", showCompany = true }: ActionLogProps) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-100">

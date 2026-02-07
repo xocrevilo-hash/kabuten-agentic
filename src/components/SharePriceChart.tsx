@@ -7,6 +7,20 @@ interface SharePriceChartProps {
   companyName: string;
 }
 
+/**
+ * Convert ticker_full (e.g. "8035.T", "2330.TW", "005930.KS", "300502.SZ", "FN")
+ * to TradingView symbol format.
+ */
+function toTradingViewSymbol(ticker: string): string {
+  if (ticker.endsWith(".T")) return `TSE:${ticker.replace(".T", "")}`;
+  if (ticker.endsWith(".TW")) return `TWSE:${ticker.replace(".TW", "")}`;
+  if (ticker.endsWith(".KS")) return `KRX:${ticker.replace(".KS", "")}`;
+  if (ticker.endsWith(".SZ")) return `SZSE:${ticker.replace(".SZ", "")}`;
+  if (ticker.endsWith(".HK")) return `HKEX:${ticker.replace(".HK", "")}`;
+  // US stocks (NYSE/NASDAQ) — no suffix
+  return ticker;
+}
+
 export default function SharePriceChart({ ticker, companyName }: SharePriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -16,13 +30,15 @@ export default function SharePriceChart({ ticker, companyName }: SharePriceChart
     // Clear any existing widget
     containerRef.current.innerHTML = "";
 
+    const tvSymbol = toTradingViewSymbol(ticker);
+
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
     script.type = "text/javascript";
     script.async = true;
     script.innerHTML = JSON.stringify({
       autosize: true,
-      symbol: `TSE:${ticker.replace(".T", "")}`,
+      symbol: tvSymbol,
       interval: "D",
       timezone: "Asia/Tokyo",
       theme: "light",

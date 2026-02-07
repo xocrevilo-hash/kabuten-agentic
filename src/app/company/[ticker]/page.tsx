@@ -47,7 +47,7 @@ export default async function CompanyPage({
 
       {/* Page Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Top Section: Investment View + Sweep Criteria + Manual Sweep */}
+        {/* Top Section: Investment View + Manual Sweep + Sweep Criteria */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
             <InvestmentView
@@ -60,16 +60,25 @@ export default async function CompanyPage({
             />
           </div>
           <div className="space-y-6">
+            <ManualSweepButton
+              companyId={company.id}
+              companyName={company.name}
+            />
             <SweepCriteria
               companyId={company.id}
               sources={criteria.sources}
               focus={criteria.focus}
             />
-            <ManualSweepButton
-              companyId={company.id}
-              companyName={company.name}
-            />
           </div>
+        </div>
+
+        {/* Analyst Agent Log */}
+        <div className="mb-8">
+          <ActionLog
+            entries={actionLog}
+            title={`Analyst Agent Log — ${company.name}`}
+            showCompany={false}
+          />
         </div>
 
         {/* Key Info + Share Price Chart */}
@@ -84,7 +93,7 @@ export default async function CompanyPage({
                 <dd className="text-sm font-medium text-gray-900">{company.name}</dd>
               </div>
               <div>
-                <dt className="text-xs text-gray-500">Japanese Name</dt>
+                <dt className="text-xs text-gray-500">Local Name</dt>
                 <dd className="text-sm font-medium text-gray-900">{company.name_jp}</dd>
               </div>
               <div>
@@ -155,7 +164,7 @@ export default async function CompanyPage({
         </div>
 
         {/* Earnings Model + Valuation */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {profile.earnings && profile.earnings.length > 0 && (
             <EarningsModel
               rows={profile.earnings}
@@ -172,13 +181,6 @@ export default async function CompanyPage({
             />
           )}
         </div>
-
-        {/* Action Log */}
-        <ActionLog
-          entries={actionLog}
-          title={`Action Log — ${company.name}`}
-          showCompany={false}
-        />
       </div>
     </div>
   );

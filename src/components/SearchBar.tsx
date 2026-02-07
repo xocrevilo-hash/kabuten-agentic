@@ -4,12 +4,37 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const COMPANIES = [
-  { id: "8035", name: "Tokyo Electron", ticker: "8035.T", sector: "Semiconductor Equipment" },
-  { id: "6146", name: "Disco Corporation", ticker: "6146.T", sector: "Semiconductor Equipment" },
+  { id: "2345", name: "Accton Technology", ticker: "2345.TW", sector: "Networking Equipment" },
   { id: "6857", name: "Advantest", ticker: "6857.T", sector: "Semiconductor Equipment" },
+  { id: "2308", name: "Delta Electronics", ticker: "2308.TW", sector: "Power Management" },
+  { id: "6146", name: "Disco Corporation", ticker: "6146.T", sector: "Semiconductor Equipment" },
+  { id: "300502", name: "Eoptolink Technology", ticker: "300502.SZ", sector: "Optical Transceivers" },
+  { id: "FN", name: "Fabrinet", ticker: "FN", sector: "Manufacturing Services" },
+  { id: "9698", name: "GDS Holdings", ticker: "9698.HK", sector: "Data Centers" },
+  { id: "012450", name: "Hanwha Aerospace", ticker: "012450.KS", sector: "Defense & Aerospace" },
+  { id: "6501", name: "Hitachi", ticker: "6501.T", sector: "Diversified Industrials" },
+  { id: "2317", name: "Hon Hai (Foxconn)", ticker: "2317.TW", sector: "Electronics Manufacturing" },
+  { id: "007660", name: "Isu Petasys", ticker: "007660.KS", sector: "PCB Manufacturing" },
+  { id: "6920", name: "Lasertec", ticker: "6920.T", sector: "Semiconductor Inspection" },
+  { id: "2301", name: "Lite-on Technology", ticker: "2301.TW", sector: "Optoelectronics" },
+  { id: "2454", name: "Mediatek", ticker: "2454.TW", sector: "Semiconductor" },
+  { id: "2408", name: "Nanya Technology", ticker: "2408.TW", sector: "Memory" },
+  { id: "6752", name: "Panasonic", ticker: "6752.T", sector: "Diversified Electronics" },
+  { id: "6323", name: "Rorze", ticker: "6323.T", sector: "Semiconductor Automation" },
+  { id: "005930", name: "Samsung Electronics", ticker: "005930.KS", sector: "Memory & Foundry" },
+  { id: "7735", name: "Screen Holdings", ticker: "7735.T", sector: "Semiconductor Equipment" },
+  { id: "000660", name: "SK Hynix", ticker: "000660.KS", sector: "Memory" },
+  { id: "8035", name: "Tokyo Electron", ticker: "8035.T", sector: "Semiconductor Equipment" },
+  { id: "2330", name: "TSMC", ticker: "2330.TW", sector: "Semiconductor Foundry" },
+  { id: "300308", name: "Zhongji Innolight", ticker: "300308.SZ", sector: "Optical Transceivers" },
 ];
 
-const THEMES = ["semiconductor equipment", "AI capex", "advanced packaging", "HBM", "EUV", "test systems"];
+const THEMES = [
+  "semiconductor equipment", "AI capex", "advanced packaging", "HBM",
+  "EUV", "test systems", "memory", "foundry", "optical transceivers",
+  "data center", "power management", "defense", "networking",
+  "PCB", "automation", "battery", "EV",
+];
 
 export default function SearchBar() {
   const [query, setQuery] = useState("");
@@ -107,7 +132,7 @@ export default function SearchBar() {
       </div>
 
       {isOpen && allResults.length > 0 && (
-        <div className="absolute z-50 mt-2 w-full rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
+        <div className="absolute z-50 mt-2 w-full rounded-xl border border-gray-200 bg-white py-2 shadow-lg max-h-80 overflow-y-auto">
           {allResults.map((result, i) => (
             <button
               key={result.id}

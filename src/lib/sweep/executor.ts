@@ -151,7 +151,8 @@ async function sweepCompany(companyId: string): Promise<SweepLog> {
     // Step 3: Map classification to severity
     const severityMap: Record<string, string> = {
       NO_CHANGE: "no_change",
-      NOTABLE: "notable",
+      NOTABLE: "incremental",
+      INCREMENTAL: "incremental",
       MATERIAL: "material",
     };
     const severity = severityMap[sweepResult.classification] || "no_change";

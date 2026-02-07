@@ -1,119 +1,137 @@
 {
   "companies": [
     {
-      "id": "8035",
-      "name": "Tokyo Electron",
-      "name_jp": "東京エレクトロン",
-      "ticker_full": "8035.T",
-      "sector": "Semiconductor Equipment — Etch, Deposition, Coater/Developer",
+      "id": "2345",
+      "name": "Accton Technology",
+      "name_jp": "アクトン・テクノロジー",
+      "ticker_full": "2345.TW",
+      "sector": "Networking Equipment — White-box Switches, Routers (ODM)",
       "investment_view": "bullish",
       "conviction": "high",
       "profile_json": {
-        "overview": "Tokyo Electron (TEL) is Japan's largest and the world's third-largest semiconductor equipment maker. Core products span etch systems, CVD/PVD deposition, coater/developers for photolithography, and cleaning systems. TEL is a key beneficiary of leading-edge node transitions and EUV adoption.",
-        "thesis": "TEL is positioned to capture outsized share of the AI-driven capex supercycle. Incremental order momentum is strong, driven by EUV-related deposition layers and advanced packaging demand. China exposure is a risk but manageable at current levels.",
+        "overview": "Accton Technology is a leading ODM (Original Design Manufacturer) of networking equipment, specializing in white-box switches, routers, and wireless access points. The company is a key supplier to hyperscaler data centers and benefits directly from the buildout of AI/cloud infrastructure requiring high-speed networking.",
+        "thesis": "Accton is a prime beneficiary of the AI data center networking upgrade cycle. Demand for 400G/800G white-box switches is accelerating as hyperscalers expand AI clusters. Accton's ODM model offers compelling cost advantages over branded alternatives from Arista and Cisco, driving share gains.",
         "key_assumptions": [
-          "AI/HPC capex cycle sustains through FY2026-27",
-          "EUV multi-patterning drives incremental deposition TAM",
-          "China revenue remains at ~25% of sales without further restrictions",
-          "Etch market share gains continue vs. Lam Research"
+          "AI/data center networking upgrade cycle to 400G/800G sustains through 2027",
+          "White-box/ODM market share continues to gain vs. branded networking equipment",
+          "Hyperscaler customer relationships deepen with next-gen platform wins",
+          "Gross margins expand as higher-speed products carry better mix"
         ],
         "risk_factors": [
-          "Escalation of US/Japan China export controls",
-          "Cyclical downturn in memory capex",
-          "Yen appreciation impacting competitiveness",
-          "Customer concentration risk (TSMC, Samsung)"
+          "Hyperscaler customer concentration (top 3 customers >60% of revenue)",
+          "Competitive response from Arista/Cisco on pricing and ODM models",
+          "Component supply constraints on high-speed switch ASICs",
+          "Geopolitical risk impacting Taiwan-based manufacturing"
         ],
         "earnings": [
-          { "period": "FY2024", "revenue": "1,830B", "operatingProfit": "432B", "netProfit": "316B", "eps": "671" },
-          { "period": "FY2025", "revenue": "2,120B", "operatingProfit": "545B", "netProfit": "398B", "eps": "845" },
-          { "period": "FY2026E", "revenue": "2,450B", "operatingProfit": "655B", "netProfit": "478B", "eps": "1,015", "isEstimate": true },
-          { "period": "FY2027E", "revenue": "2,680B", "operatingProfit": "735B", "netProfit": "536B", "eps": "1,138", "isEstimate": true }
+          {
+            "period": "FY2024",
+            "revenue": "52B",
+            "operatingProfit": "5.8B",
+            "operatingProfitMargin": "11.2%",
+            "netProfit": "4.9B",
+            "eps": "22.5"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "68B",
+            "operatingProfit": "8.2B",
+            "operatingProfitMargin": "12.1%",
+            "netProfit": "6.9B",
+            "eps": "31.8"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "88B",
+            "operatingProfit": "11.4B",
+            "operatingProfitMargin": "13.0%",
+            "netProfit": "9.6B",
+            "eps": "44.2",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "105B",
+            "operatingProfit": "14.2B",
+            "operatingProfitMargin": "13.5%",
+            "netProfit": "12.0B",
+            "eps": "55.1",
+            "isEstimate": true
+          }
         ],
         "segments": [
-          { "name": "SPE (Etch, Deposition)", "revenue": "1,480B", "share": "70%" },
-          { "name": "Coater/Developer", "revenue": "425B", "share": "20%" },
-          { "name": "Other / FPD", "revenue": "215B", "share": "10%" }
+          {
+            "name": "Data Center Networking (Switches)",
+            "revenue": "48B",
+            "share": "71%"
+          },
+          {
+            "name": "Enterprise Networking",
+            "revenue": "12B",
+            "share": "18%"
+          },
+          {
+            "name": "Wireless & Other",
+            "revenue": "8B",
+            "share": "11%"
+          }
         ],
-        "current_price": "23,450",
-        "fair_value": "28,000",
+        "current_price": "520",
+        "fair_value": "650",
         "valuation_metrics": [
-          { "label": "P/E (FY26E)", "current": "23.1x", "sectorAvg": "28x" },
-          { "label": "EV/EBITDA", "current": "15.8x", "sectorAvg": "20x" },
-          { "label": "P/B", "current": "4.2x" },
-          { "label": "Div. Yield", "current": "1.8%" }
+          {
+            "label": "P/E (FY26E)",
+            "current": "11.8x",
+            "sectorAvg": "18x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "8.5x",
+            "sectorAvg": "14x"
+          },
+          {
+            "label": "P/B",
+            "current": "3.8x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "2.5%"
+          }
         ],
         "valuation_scenarios": [
-          { "label": "Bull Case", "targetPrice": "32,000", "methodology": "30x FY27E EPS on sustained AI capex cycle", "upside": "+36%" },
-          { "label": "Base Case", "targetPrice": "28,000", "methodology": "25x FY27E EPS with moderate growth", "upside": "+19%" },
-          { "label": "Bear Case", "targetPrice": "18,500", "methodology": "18x FY26E EPS on China export control escalation", "upside": "-21%" }
+          {
+            "label": "Bull Case",
+            "targetPrice": "780",
+            "methodology": "16x FY27E EPS on sustained AI networking supercycle",
+            "upside": "+50%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "650",
+            "methodology": "12x FY27E EPS with moderate growth",
+            "upside": "+25%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "380",
+            "methodology": "8x FY26E EPS on hyperscaler capex slowdown",
+            "upside": "-27%"
+          }
         ],
-        "valuation_notes": "TEL trades at a discount to ASML (35x) and Lam Research (28x) on forward P/E. Discount partly reflects China exposure risk. Upside catalysts: order momentum, China risk de-escalation."
+        "valuation_notes": "Accton trades at a significant discount to branded networking peers (Arista at 35x). ODM discount is partly warranted but gap should narrow as AI networking demand validates the white-box model. Key catalyst: 800G product ramp."
       },
       "sweep_criteria_json": {
-        "sources": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"],
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
         "focus": [
-          "Focus specifically on incremental order growth momentum and new business wins",
-          "Monitor China revenue exposure and any regulatory/sanctions developments",
-          "Track EUV-related deposition and coater/developer competitive positioning vs. ASML ecosystem"
-        ]
-      }
-    },
-    {
-      "id": "6146",
-      "name": "Disco Corporation",
-      "name_jp": "ディスコ",
-      "ticker_full": "6146.T",
-      "sector": "Semiconductor Equipment — Precision Cutting, Grinding, Polishing",
-      "investment_view": "neutral",
-      "conviction": "medium",
-      "profile_json": {
-        "overview": "Disco Corporation is the global leader in precision cutting, grinding, and polishing equipment for semiconductor wafers. Their dicing saws, grinders, and laser processing machines are essential for back-end semiconductor manufacturing. Disco holds dominant market share in dicing (>70% globally).",
-        "thesis": "Disco is a high-quality compounder with dominant market share in precision back-end equipment. The advanced packaging megatrend (chiplets, HBM stacking) should drive structural demand growth. Valuation is full, limiting near-term upside despite strong fundamentals.",
-        "key_assumptions": [
-          "Advanced packaging adoption accelerates (chiplets, 3D stacking)",
-          "HBM demand drives incremental dicing and grinding volumes",
-          "Pricing power sustained given dominant market position",
-          "Consumables revenue provides earnings stability"
-        ],
-        "risk_factors": [
-          "Valuation premium vulnerable to any growth deceleration",
-          "Customer capex delays in packaging equipment",
-          "Emerging competition in laser-based dicing",
-          "Yen strength impacting overseas competitiveness"
-        ],
-        "earnings": [
-          { "period": "FY2024", "revenue": "312B", "operatingProfit": "108B", "netProfit": "82B", "eps": "760" },
-          { "period": "FY2025", "revenue": "345B", "operatingProfit": "122B", "netProfit": "93B", "eps": "862" },
-          { "period": "FY2026E", "revenue": "385B", "operatingProfit": "140B", "netProfit": "106B", "eps": "982", "isEstimate": true },
-          { "period": "FY2027E", "revenue": "420B", "operatingProfit": "158B", "netProfit": "120B", "eps": "1,112", "isEstimate": true }
-        ],
-        "segments": [
-          { "name": "Precision Cutting", "revenue": "165B", "share": "48%" },
-          { "name": "Precision Grinding", "revenue": "115B", "share": "33%" },
-          { "name": "Precision Polishing", "revenue": "40B", "share": "12%" },
-          { "name": "Consumables & Other", "revenue": "25B", "share": "7%" }
-        ],
-        "current_price": "42,800",
-        "fair_value": "44,000",
-        "valuation_metrics": [
-          { "label": "P/E (FY26E)", "current": "43.6x", "sectorAvg": "28x" },
-          { "label": "EV/EBITDA", "current": "28.5x", "sectorAvg": "20x" },
-          { "label": "P/B", "current": "8.1x" },
-          { "label": "Div. Yield", "current": "0.9%" }
-        ],
-        "valuation_scenarios": [
-          { "label": "Bull Case", "targetPrice": "55,000", "methodology": "50x FY27E EPS on HBM/packaging supercycle", "upside": "+28%" },
-          { "label": "Base Case", "targetPrice": "44,000", "methodology": "40x FY27E EPS with steady growth", "upside": "+3%" },
-          { "label": "Bear Case", "targetPrice": "32,000", "methodology": "30x FY26E EPS on packaging capex delay", "upside": "-25%" }
-        ],
-        "valuation_notes": "Disco commands a premium multiple reflecting dominant market position (>70% dicing share) and high recurring consumables revenue. Limited near-term upside at current valuation; catalyst needed."
-      },
-      "sweep_criteria_json": {
-        "sources": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"],
-        "focus": [
-          "Monitor advanced packaging order trends, particularly for AI chip dicing and grinding",
-          "Track HBM (High Bandwidth Memory) related demand and Disco's positioning",
-          "Watch for margin trends and any pricing power signals in precision cutting equipment"
+          "Track AI/data center networking switch demand for 400G/800G platforms",
+          "Monitor white-box/ODM market share trends vs Arista/Cisco",
+          "Watch hyperscaler customer concentration and new customer wins"
         ]
       }
     },
@@ -141,38 +159,2932 @@
           "Cyclical memory test demand volatility"
         ],
         "earnings": [
-          { "period": "FY2024", "revenue": "560B", "operatingProfit": "142B", "netProfit": "108B", "eps": "582" },
-          { "period": "FY2025", "revenue": "780B", "operatingProfit": "228B", "netProfit": "174B", "eps": "938" },
-          { "period": "FY2026E", "revenue": "1,070B", "operatingProfit": "354B", "netProfit": "270B", "eps": "1,455", "isEstimate": true },
-          { "period": "FY2027E", "revenue": "1,250B", "operatingProfit": "425B", "netProfit": "324B", "eps": "1,746", "isEstimate": true }
+          {
+            "period": "FY2024",
+            "revenue": "560B",
+            "operatingProfit": "142B",
+            "netProfit": "108B",
+            "eps": "582"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "780B",
+            "operatingProfit": "228B",
+            "netProfit": "174B",
+            "eps": "938"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "1,070B",
+            "operatingProfit": "354B",
+            "netProfit": "270B",
+            "eps": "1,455",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "1,250B",
+            "operatingProfit": "425B",
+            "netProfit": "324B",
+            "eps": "1,746",
+            "isEstimate": true
+          }
         ],
         "segments": [
-          { "name": "SoC Test (V93000)", "revenue": "520B", "share": "49%" },
-          { "name": "Memory Test", "revenue": "285B", "share": "27%" },
-          { "name": "SSD Test", "revenue": "160B", "share": "15%" },
-          { "name": "Services & Other", "revenue": "105B", "share": "9%" }
+          {
+            "name": "SoC Test (V93000)",
+            "revenue": "520B",
+            "share": "49%"
+          },
+          {
+            "name": "Memory Test",
+            "revenue": "285B",
+            "share": "27%"
+          },
+          {
+            "name": "SSD Test",
+            "revenue": "160B",
+            "share": "15%"
+          },
+          {
+            "name": "Services & Other",
+            "revenue": "105B",
+            "share": "9%"
+          }
         ],
         "current_price": "8,450",
         "fair_value": "10,500",
         "valuation_metrics": [
-          { "label": "P/E (FY26E)", "current": "34.2x", "sectorAvg": "28x" },
-          { "label": "EV/EBITDA", "current": "22.1x", "sectorAvg": "20x" },
-          { "label": "P/B", "current": "6.8x" },
-          { "label": "Div. Yield", "current": "0.6%" }
+          {
+            "label": "P/E (FY26E)",
+            "current": "34.2x",
+            "sectorAvg": "28x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "22.1x",
+            "sectorAvg": "20x"
+          },
+          {
+            "label": "P/B",
+            "current": "6.8x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "0.6%"
+          }
         ],
         "valuation_scenarios": [
-          { "label": "Bull Case", "targetPrice": "13,000", "methodology": "38x FY27E EPS on AI test supercycle + HBM wins", "upside": "+54%" },
-          { "label": "Base Case", "targetPrice": "10,500", "methodology": "30x FY27E EPS with sustained growth", "upside": "+24%" },
-          { "label": "Bear Case", "targetPrice": "6,800", "methodology": "22x FY26E EPS on test demand normalization", "upside": "-20%" }
+          {
+            "label": "Bull Case",
+            "targetPrice": "13,000",
+            "methodology": "38x FY27E EPS on AI test supercycle + HBM wins",
+            "upside": "+54%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "10,500",
+            "methodology": "30x FY27E EPS with sustained growth",
+            "upside": "+24%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "6,800",
+            "methodology": "22x FY26E EPS on test demand normalization",
+            "upside": "-20%"
+          }
         ],
         "valuation_notes": "Advantest premium justified by structural AI test demand growth. V93000 platform dominance and HBM test wins provide multi-year visibility. Teradyne competitive risk is key monitor."
       },
       "sweep_criteria_json": {
-        "sources": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"],
+        "sources": [
+          "company_ir",
+          "edinet",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
         "focus": [
           "Track AI/HPC-related test demand, particularly for advanced SoC and HBM test systems",
           "Monitor new platform wins and competitive dynamics vs. Teradyne",
           "Watch for order intake trends and any signals on test intensity per transistor"
+        ]
+      }
+    },
+    {
+      "id": "2308",
+      "name": "Delta Electronics",
+      "name_jp": "デルタ電子",
+      "ticker_full": "2308.TW",
+      "sector": "Power Management — Power Supplies, Thermal, EV, Automation",
+      "investment_view": "bullish",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Delta Electronics is a global leader in power management and thermal solutions, with growing positions in EV charging, industrial automation, and data center infrastructure. The company supplies power supplies, cooling systems, and UPS solutions to major hyperscalers and server OEMs.",
+        "thesis": "Delta is uniquely positioned at the intersection of AI infrastructure (power/thermal) and electrification (EV/energy). AI server power density is rising dramatically, driving demand for Delta's high-efficiency power supplies and liquid cooling solutions. The EV charging business adds a secular growth vector.",
+        "key_assumptions": [
+          "AI server power supply demand grows 30%+ annually through 2027",
+          "Data center thermal/liquid cooling becomes a material revenue contributor",
+          "EV charging infrastructure buildout sustains across key markets",
+          "Product mix shift toward higher-value solutions drives margin expansion"
+        ],
+        "risk_factors": [
+          "Margin pressure from commodity cost inflation (copper, steel)",
+          "Competition in server power supplies from Lite-On, Chicony",
+          "EV charging segment may remain low-margin near-term",
+          "Currency headwinds from TWD appreciation"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "428B",
+            "operatingProfit": "47B",
+            "netProfit": "38B",
+            "eps": "14.6"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "502B",
+            "operatingProfit": "60B",
+            "netProfit": "49B",
+            "eps": "18.8"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "590B",
+            "operatingProfit": "75B",
+            "netProfit": "61B",
+            "eps": "23.5",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "670B",
+            "operatingProfit": "90B",
+            "netProfit": "73B",
+            "eps": "28.1",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Power Electronics (Server PSU, UPS)",
+            "revenue": "220B",
+            "share": "44%"
+          },
+          {
+            "name": "Automation & Infrastructure",
+            "revenue": "135B",
+            "share": "27%"
+          },
+          {
+            "name": "EV Charging & Energy",
+            "revenue": "82B",
+            "share": "16%"
+          },
+          {
+            "name": "Thermal & Other",
+            "revenue": "65B",
+            "share": "13%"
+          }
+        ],
+        "current_price": "415",
+        "fair_value": "490",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "17.7x",
+            "sectorAvg": "20x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "12.8x",
+            "sectorAvg": "15x"
+          },
+          {
+            "label": "P/B",
+            "current": "4.5x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "2.2%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "580",
+            "methodology": "22x FY27E EPS on AI power + EV dual growth",
+            "upside": "+40%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "490",
+            "methodology": "18x FY27E EPS with steady mix improvement",
+            "upside": "+18%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "310",
+            "methodology": "14x FY26E EPS on margin compression",
+            "upside": "-25%"
+          }
+        ],
+        "valuation_notes": "Delta trades in-line with diversified industrial peers. AI power supply demand provides upside optionality not fully reflected in current valuation. EV charging segment is a free call option at current contribution levels."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track AI server power supply demand and data center thermal management adoption",
+          "Monitor EV/energy infrastructure growth across key geographies",
+          "Watch for margin expansion signals from higher-value product mix shift"
+        ]
+      }
+    },
+    {
+      "id": "6146",
+      "name": "Disco Corporation",
+      "name_jp": "ディスコ",
+      "ticker_full": "6146.T",
+      "sector": "Semiconductor Equipment — Precision Cutting, Grinding, Polishing",
+      "investment_view": "neutral",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Disco Corporation is the global leader in precision cutting, grinding, and polishing equipment for semiconductor wafers. Their dicing saws, grinders, and laser processing machines are essential for back-end semiconductor manufacturing. Disco holds dominant market share in dicing (>70% globally).",
+        "thesis": "Disco is a high-quality compounder with dominant market share in precision back-end equipment. The advanced packaging megatrend (chiplets, HBM stacking) should drive structural demand growth. Valuation is full, limiting near-term upside despite strong fundamentals.",
+        "key_assumptions": [
+          "Advanced packaging adoption accelerates (chiplets, 3D stacking)",
+          "HBM demand drives incremental dicing and grinding volumes",
+          "Pricing power sustained given dominant market position",
+          "Consumables revenue provides earnings stability"
+        ],
+        "risk_factors": [
+          "Valuation premium vulnerable to any growth deceleration",
+          "Customer capex delays in packaging equipment",
+          "Emerging competition in laser-based dicing",
+          "Yen strength impacting overseas competitiveness"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "312B",
+            "operatingProfit": "108B",
+            "netProfit": "82B",
+            "eps": "760"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "345B",
+            "operatingProfit": "122B",
+            "netProfit": "93B",
+            "eps": "862"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "385B",
+            "operatingProfit": "140B",
+            "netProfit": "106B",
+            "eps": "982",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "420B",
+            "operatingProfit": "158B",
+            "netProfit": "120B",
+            "eps": "1,112",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Precision Cutting",
+            "revenue": "165B",
+            "share": "48%"
+          },
+          {
+            "name": "Precision Grinding",
+            "revenue": "115B",
+            "share": "33%"
+          },
+          {
+            "name": "Precision Polishing",
+            "revenue": "40B",
+            "share": "12%"
+          },
+          {
+            "name": "Consumables & Other",
+            "revenue": "25B",
+            "share": "7%"
+          }
+        ],
+        "current_price": "42,800",
+        "fair_value": "44,000",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "43.6x",
+            "sectorAvg": "28x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "28.5x",
+            "sectorAvg": "20x"
+          },
+          {
+            "label": "P/B",
+            "current": "8.1x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "0.9%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "55,000",
+            "methodology": "50x FY27E EPS on HBM/packaging supercycle",
+            "upside": "+28%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "44,000",
+            "methodology": "40x FY27E EPS with steady growth",
+            "upside": "+3%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "32,000",
+            "methodology": "30x FY26E EPS on packaging capex delay",
+            "upside": "-25%"
+          }
+        ],
+        "valuation_notes": "Disco commands a premium multiple reflecting dominant market position (>70% dicing share) and high recurring consumables revenue. Limited near-term upside at current valuation; catalyst needed."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "edinet",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Monitor advanced packaging order trends, particularly for AI chip dicing and grinding",
+          "Track HBM (High Bandwidth Memory) related demand and Disco's positioning",
+          "Watch for margin trends and any pricing power signals in precision cutting equipment"
+        ]
+      }
+    },
+    {
+      "id": "300502",
+      "name": "Eoptolink Technology",
+      "name_jp": "易飛拓光通信",
+      "ticker_full": "300502.SZ",
+      "sector": "Optical Transceivers — Data Center, Telecom",
+      "investment_view": "bullish",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Eoptolink Technology is a leading Chinese optical transceiver manufacturer, specializing in high-speed modules for data center and telecom applications. The company is ramping 800G products and developing 1.6T solutions to serve the rapidly growing AI data center interconnect market.",
+        "thesis": "Eoptolink is positioned to capture share in the fast-growing optical transceiver market driven by AI data center buildout. The company's cost-competitive manufacturing and increasing technology capability in 800G/1.6T modules offer significant revenue growth potential, though US-China trade risks remain a key overhang.",
+        "key_assumptions": [
+          "800G optical transceiver shipments ramp significantly in 2025-26",
+          "1.6T product development stays on track for 2027 volume",
+          "US/China trade restrictions do not escalate to block optical module exports",
+          "Customer diversification beyond Chinese hyperscalers progresses"
+        ],
+        "risk_factors": [
+          "US entity list risk could severely impact export capability",
+          "Intense competition from Zhongji Innolight domestically",
+          "Technology gap vs. Western peers in silicon photonics",
+          "Gross margin pressure from pricing competition"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "8.2B",
+            "operatingProfit": "2.1B",
+            "netProfit": "1.8B",
+            "eps": "3.85"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "13.5B",
+            "operatingProfit": "3.6B",
+            "netProfit": "3.1B",
+            "eps": "6.62"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "19.8B",
+            "operatingProfit": "5.3B",
+            "netProfit": "4.5B",
+            "eps": "9.62",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "25.5B",
+            "operatingProfit": "6.9B",
+            "netProfit": "5.9B",
+            "eps": "12.61",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Data Center Transceivers",
+            "revenue": "10.5B",
+            "share": "78%"
+          },
+          {
+            "name": "Telecom Transceivers",
+            "revenue": "2.2B",
+            "share": "16%"
+          },
+          {
+            "name": "Other Optical Products",
+            "revenue": "0.8B",
+            "share": "6%"
+          }
+        ],
+        "current_price": "148",
+        "fair_value": "185",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "15.4x",
+            "sectorAvg": "22x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "11.2x",
+            "sectorAvg": "16x"
+          },
+          {
+            "label": "P/B",
+            "current": "5.2x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "0.8%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "240",
+            "methodology": "20x FY27E EPS on 1.6T ramp and share gains",
+            "upside": "+62%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "185",
+            "methodology": "15x FY27E EPS with steady growth",
+            "upside": "+25%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "80",
+            "methodology": "8x FY26E EPS on US trade restrictions",
+            "upside": "-46%"
+          }
+        ],
+        "valuation_notes": "Eoptolink trades at a discount to Zhongji Innolight reflecting smaller scale and higher perceived trade risk. Discount is warranted but could narrow if customer diversification progresses. Binary US entity list risk is the key downside scenario."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track 800G/1.6T optical transceiver shipment ramp and customer wins",
+          "Monitor competitive positioning vs Zhongji Innolight in data center modules",
+          "Watch for US/China trade restriction developments impacting optical component exports"
+        ]
+      }
+    },
+    {
+      "id": "FN",
+      "name": "Fabrinet",
+      "name_jp": "ファブリネット",
+      "ticker_full": "FN",
+      "sector": "Optical/Electronic Manufacturing Services",
+      "investment_view": "bullish",
+      "conviction": "high",
+      "profile_json": {
+        "overview": "Fabrinet is a leading provider of advanced optical and electronic manufacturing services, headquartered in the Cayman Islands with primary operations in Thailand. The company manufactures complex optical, electro-optical, and electronic products for OEMs in the telecom, data center, and industrial markets. Key customers include Nvidia (through optical module partners) and Lumentum.",
+        "thesis": "Fabrinet is an indirect but high-conviction play on AI data center optical interconnect buildout. As the contract manufacturer for leading optical transceiver companies, Fabrinet benefits from 800G/1.6T volume ramps without direct customer concentration risk. Manufacturing excellence and capacity expansion provide sustainable competitive advantages.",
+        "key_assumptions": [
+          "Optical manufacturing volumes grow 25%+ annually driven by AI data center demand",
+          "New technology qualifications (silicon photonics, co-packaged optics) are won",
+          "Thailand manufacturing cost advantage sustained",
+          "Capacity expansion in Chonburi facilities comes online on schedule"
+        ],
+        "risk_factors": [
+          "Customer concentration (Nvidia ecosystem + Lumentum >50% of revenue)",
+          "Capacity expansion execution risk",
+          "Technology transitions could shift manufacturing to in-house at customers",
+          "Thailand political/regulatory risk"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "2.9B",
+            "operatingProfit": "0.38B",
+            "netProfit": "0.33B",
+            "eps": "9.05"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "3.6B",
+            "operatingProfit": "0.50B",
+            "netProfit": "0.44B",
+            "eps": "12.05"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "4.5B",
+            "operatingProfit": "0.65B",
+            "netProfit": "0.57B",
+            "eps": "15.60",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "5.2B",
+            "operatingProfit": "0.78B",
+            "netProfit": "0.68B",
+            "eps": "18.65",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Optical Communications",
+            "revenue": "2.7B",
+            "share": "75%"
+          },
+          {
+            "name": "Industrial & Automotive",
+            "revenue": "0.5B",
+            "share": "14%"
+          },
+          {
+            "name": "Other (Sensors, Lasers)",
+            "revenue": "0.4B",
+            "share": "11%"
+          }
+        ],
+        "current_price": "285",
+        "fair_value": "340",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "18.3x",
+            "sectorAvg": "22x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "14.5x",
+            "sectorAvg": "18x"
+          },
+          {
+            "label": "P/B",
+            "current": "5.5x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "0.0%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "420",
+            "methodology": "24x FY27E EPS on optical supercycle and new platform wins",
+            "upside": "+47%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "340",
+            "methodology": "18x FY27E EPS with sustained optical growth",
+            "upside": "+19%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "200",
+            "methodology": "13x FY26E EPS on customer in-sourcing risk",
+            "upside": "-30%"
+          }
+        ],
+        "valuation_notes": "Fabrinet trades at a modest premium to EMS peers, reflecting higher-margin optical manufacturing specialization. Valuation is reasonable given the AI optical interconnect growth vector. Key risk is customer concentration in Nvidia/Lumentum ecosystem."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track optical manufacturing volumes and new technology qualifications (silicon photonics, CPO)",
+          "Monitor customer concentration trends, especially Nvidia and Lumentum relationships",
+          "Watch capacity expansion progress and utilization rates at Thailand facilities"
+        ]
+      }
+    },
+    {
+      "id": "9698",
+      "name": "GDS Holdings",
+      "name_jp": "万国数拠",
+      "ticker_full": "9698.HK",
+      "sector": "Data Centers — China",
+      "investment_view": "neutral",
+      "conviction": "low",
+      "profile_json": {
+        "overview": "GDS Holdings is one of China's largest carrier-neutral data center operators, providing colocation and managed services to hyperscaler cloud providers, large enterprises, and financial institutions. The company operates over 100 data centers across major Chinese cities and is expanding into Southeast Asia.",
+        "thesis": "GDS is positioned to benefit from China's growing AI and cloud computing demand, which is driving need for additional data center capacity. However, elevated leverage, regulatory uncertainty, and competition from state-backed providers create significant headwinds. The risk/reward is balanced at current levels.",
+        "key_assumptions": [
+          "China AI/cloud demand drives mid-teens annual capacity growth",
+          "Utilization rates recover toward 70%+ on new capacity",
+          "Pricing stabilizes after recent competitive pressure",
+          "Leverage ratio improves through operating cash flow growth"
+        ],
+        "risk_factors": [
+          "High leverage (net debt/EBITDA >6x) limits financial flexibility",
+          "Competition from state-backed China Telecom, China Mobile data centers",
+          "Regulatory risk on data sovereignty and cross-border data flows",
+          "Power cost inflation and availability constraints"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "11.2B",
+            "operatingProfit": "-0.8B",
+            "netProfit": "-2.5B",
+            "eps": "-1.32"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "13.5B",
+            "operatingProfit": "0.5B",
+            "netProfit": "-1.2B",
+            "eps": "-0.63"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "16.8B",
+            "operatingProfit": "2.2B",
+            "netProfit": "0.3B",
+            "eps": "0.16",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "20.5B",
+            "operatingProfit": "4.1B",
+            "netProfit": "1.8B",
+            "eps": "0.95",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Colocation Services",
+            "revenue": "11.0B",
+            "share": "81%"
+          },
+          {
+            "name": "Managed Services",
+            "revenue": "1.8B",
+            "share": "14%"
+          },
+          {
+            "name": "International (SE Asia)",
+            "revenue": "0.7B",
+            "share": "5%"
+          }
+        ],
+        "current_price": "18.50",
+        "fair_value": "20.00",
+        "valuation_metrics": [
+          {
+            "label": "EV/EBITDA (FY26E)",
+            "current": "12.5x",
+            "sectorAvg": "18x"
+          },
+          {
+            "label": "P/B",
+            "current": "0.8x"
+          },
+          {
+            "label": "Net Debt/EBITDA",
+            "current": "6.2x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "0.0%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "32.00",
+            "methodology": "18x FY27E EBITDA on China AI demand acceleration",
+            "upside": "+73%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "20.00",
+            "methodology": "13x FY27E EBITDA with gradual delevering",
+            "upside": "+8%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "10.00",
+            "methodology": "8x FY26E EBITDA on continued losses and leverage concerns",
+            "upside": "-46%"
+          }
+        ],
+        "valuation_notes": "GDS trades at a steep discount to global data center peers (Equinix at 25x EV/EBITDA) reflecting China risk, leverage, and profitability concerns. Deep value potential if China AI demand accelerates, but high-risk profile limits conviction."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Monitor China data center demand trends from AI and cloud computing adoption",
+          "Track new capacity additions, utilization rates, and pricing trends",
+          "Watch regulatory developments and competition from state-backed data center providers"
+        ]
+      }
+    },
+    {
+      "id": "012450",
+      "name": "Hanwha Aerospace",
+      "name_jp": "ハンファエアロスペース",
+      "ticker_full": "012450.KS",
+      "sector": "Defense, Aerospace, Engines, Space Systems",
+      "investment_view": "bullish",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Hanwha Aerospace is a leading South Korean defense and aerospace company, producing aircraft engines, defense systems (self-propelled howitzers, armored vehicles), and space/satellite components. The company has benefited significantly from growing global defense spending and South Korea's emergence as a major arms exporter.",
+        "thesis": "Hanwha Aerospace is a structural beneficiary of the global defense spending upcycle driven by geopolitical tensions. South Korea's growing defense export competitiveness, particularly in artillery and armored vehicle systems, provides a multi-year order backlog growth story. The space/satellite segment adds long-term optionality.",
+        "key_assumptions": [
+          "Global defense spending continues to rise driven by geopolitical tensions",
+          "Korean defense exports win additional contracts in Europe and Middle East",
+          "Aerospace engine business maintains steady growth from commercial aviation recovery",
+          "Space/satellite segment begins contributing meaningful revenue by 2027"
+        ],
+        "risk_factors": [
+          "Defense order book dependent on geopolitical environment",
+          "Korean won strength could impact export competitiveness",
+          "Execution risk on large-scale international defense contracts",
+          "Space segment is pre-revenue and capital intensive"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "8.5T",
+            "operatingProfit": "0.72T",
+            "netProfit": "0.48T",
+            "eps": "9,200"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "11.2T",
+            "operatingProfit": "1.05T",
+            "netProfit": "0.71T",
+            "eps": "13,600"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "14.0T",
+            "operatingProfit": "1.40T",
+            "netProfit": "0.95T",
+            "eps": "18,200",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "16.5T",
+            "operatingProfit": "1.72T",
+            "netProfit": "1.17T",
+            "eps": "22,400",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Defense Systems",
+            "revenue": "6.8T",
+            "share": "61%"
+          },
+          {
+            "name": "Aerospace Engines",
+            "revenue": "3.0T",
+            "share": "27%"
+          },
+          {
+            "name": "Space & Satellite",
+            "revenue": "0.8T",
+            "share": "7%"
+          },
+          {
+            "name": "Other",
+            "revenue": "0.6T",
+            "share": "5%"
+          }
+        ],
+        "current_price": "380,000",
+        "fair_value": "450,000",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "20.9x",
+            "sectorAvg": "22x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "14.2x",
+            "sectorAvg": "16x"
+          },
+          {
+            "label": "P/B",
+            "current": "3.5x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "0.4%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "550,000",
+            "methodology": "26x FY27E EPS on defense export supercycle",
+            "upside": "+45%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "450,000",
+            "methodology": "20x FY27E EPS with sustained defense spending growth",
+            "upside": "+18%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "280,000",
+            "methodology": "15x FY26E EPS on defense order slowdown",
+            "upside": "-26%"
+          }
+        ],
+        "valuation_notes": "Hanwha Aerospace trades in-line with global defense peers on forward P/E. Premium potential if Korean defense exports continue to gain share. Space segment is an unpriced call option at current valuation."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track defense order book growth and new export contract wins",
+          "Monitor aerospace engine development and commercial aviation demand",
+          "Watch space/satellite segment milestones and government contracts"
+        ]
+      }
+    },
+    {
+      "id": "6501",
+      "name": "Hitachi",
+      "name_jp": "日立製作所",
+      "ticker_full": "6501.T",
+      "sector": "Diversified — IT Services, Infrastructure, Industrial Systems",
+      "investment_view": "bullish",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Hitachi is a diversified Japanese conglomerate that has undergone a major transformation, divesting low-margin businesses and focusing on digital solutions (Lumada platform), power grid/energy infrastructure, and railway systems. The company is now positioned as a social infrastructure and digital solutions leader.",
+        "thesis": "Hitachi's portfolio transformation is bearing fruit, with the Lumada digital platform driving higher-margin recurring revenue growth. Power grid and energy infrastructure orders are surging globally, and Hitachi (through its GlobalLogic and Hitachi Energy subsidiaries) is well-positioned to capture this demand. Margins have room for further expansion.",
+        "key_assumptions": [
+          "Lumada digital solutions revenue grows 15%+ annually",
+          "Power grid/energy infrastructure orders remain strong through 2027",
+          "Portfolio restructuring drives operating margin improvement toward 12%+",
+          "GlobalLogic integration delivers cross-selling synergies"
+        ],
+        "risk_factors": [
+          "Conglomerate discount may persist despite restructuring",
+          "Energy infrastructure projects carry execution and delivery risk",
+          "Yen appreciation negatively impacts overseas earnings translation",
+          "IT services segment faces competition from Accenture, TCS"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "9,730B",
+            "operatingProfit": "838B",
+            "netProfit": "592B",
+            "eps": "128"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "10,200B",
+            "operatingProfit": "960B",
+            "netProfit": "680B",
+            "eps": "147"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "10,900B",
+            "operatingProfit": "1,100B",
+            "netProfit": "780B",
+            "eps": "169",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "11,500B",
+            "operatingProfit": "1,250B",
+            "netProfit": "890B",
+            "eps": "193",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Digital Systems & Services (Lumada)",
+            "revenue": "2,580B",
+            "share": "25%"
+          },
+          {
+            "name": "Green Energy & Mobility",
+            "revenue": "2,350B",
+            "share": "23%"
+          },
+          {
+            "name": "Connective Industries",
+            "revenue": "2,860B",
+            "share": "28%"
+          },
+          {
+            "name": "Hitachi Astemo & Other",
+            "revenue": "2,410B",
+            "share": "24%"
+          }
+        ],
+        "current_price": "3,850",
+        "fair_value": "4,500",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "22.8x",
+            "sectorAvg": "18x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "12.5x",
+            "sectorAvg": "11x"
+          },
+          {
+            "label": "P/B",
+            "current": "2.8x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "1.5%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "5,200",
+            "methodology": "28x FY27E EPS on Lumada + energy infrastructure acceleration",
+            "upside": "+35%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "4,500",
+            "methodology": "23x FY27E EPS with steady margin expansion",
+            "upside": "+17%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "2,900",
+            "methodology": "17x FY26E EPS on margin expansion stall",
+            "upside": "-25%"
+          }
+        ],
+        "valuation_notes": "Hitachi commands a re-rating premium after successful portfolio transformation. Trades above Japanese conglomerate peers but below global IT services/infrastructure comps. Upside from continued margin expansion and Lumada growth."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "edinet",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track Lumada digital solutions revenue growth and new customer wins",
+          "Monitor power grid and energy infrastructure order trends globally",
+          "Watch portfolio restructuring moves and margin improvement trajectory"
+        ]
+      }
+    },
+    {
+      "id": "2317",
+      "name": "Hon Hai / Foxconn",
+      "name_jp": "鴻海精密工業",
+      "ticker_full": "2317.TW",
+      "sector": "Electronics Manufacturing — AI Servers, Consumer Devices",
+      "investment_view": "bullish",
+      "conviction": "high",
+      "profile_json": {
+        "overview": "Hon Hai Precision Industry (Foxconn) is the world's largest electronics contract manufacturer, best known for assembling Apple iPhones. The company is rapidly expanding into AI server assembly, becoming a key manufacturing partner for Nvidia's GB200/GB300 AI server platforms. Hon Hai also has growing EV manufacturing ambitions.",
+        "thesis": "Hon Hai is undergoing a strategic transformation from a low-margin consumer electronics assembler to a higher-margin AI infrastructure manufacturer. The GB200/GB300 AI server assembly ramp represents a step-change in revenue and margin profile. Diversification away from Apple dependence reduces concentration risk while EV manufacturing adds long-term optionality.",
+        "key_assumptions": [
+          "AI server assembly volumes (Nvidia GB200/GB300) ramp significantly in 2025-27",
+          "AI server margins are structurally higher than consumer electronics assembly",
+          "Apple revenue remains stable while AI server revenue grows faster",
+          "EV segment (MIH platform) begins generating revenue by 2026-27"
+        ],
+        "risk_factors": [
+          "Apple revenue decline faster than AI server ramp",
+          "AI server assembly margins may face competitive pressure",
+          "EV segment requires significant investment with uncertain returns",
+          "Geopolitical risk to Taiwan-based operations and China manufacturing"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "6,160B",
+            "operatingProfit": "182B",
+            "operatingProfitMargin": "3.0%",
+            "netProfit": "152B",
+            "eps": "11.0"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "6,820B",
+            "operatingProfit": "225B",
+            "operatingProfitMargin": "3.3%",
+            "netProfit": "188B",
+            "eps": "13.6"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "7,650B",
+            "operatingProfit": "290B",
+            "operatingProfitMargin": "3.8%",
+            "netProfit": "242B",
+            "eps": "17.5",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "8,300B",
+            "operatingProfit": "345B",
+            "operatingProfitMargin": "4.2%",
+            "netProfit": "288B",
+            "eps": "20.8",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Consumer Electronics (Apple)",
+            "revenue": "3,550B",
+            "share": "52%"
+          },
+          {
+            "name": "Cloud & Networking (AI Servers)",
+            "revenue": "2,100B",
+            "share": "31%"
+          },
+          {
+            "name": "Computing Products",
+            "revenue": "820B",
+            "share": "12%"
+          },
+          {
+            "name": "Components & Other",
+            "revenue": "350B",
+            "share": "5%"
+          }
+        ],
+        "current_price": "210",
+        "fair_value": "260",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "12.0x",
+            "sectorAvg": "15x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "7.8x",
+            "sectorAvg": "10x"
+          },
+          {
+            "label": "P/B",
+            "current": "2.1x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "3.8%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "320",
+            "methodology": "16x FY27E EPS on AI server margin inflection",
+            "upside": "+52%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "260",
+            "methodology": "13x FY27E EPS with steady AI server ramp",
+            "upside": "+24%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "150",
+            "methodology": "9x FY26E EPS on Apple volume decline + slow AI ramp",
+            "upside": "-29%"
+          }
+        ],
+        "valuation_notes": "Hon Hai trades at a historically low P/E for a company with accelerating AI server growth. The market still applies a consumer electronics assembler multiple despite the mix shift toward higher-margin AI infrastructure. Catalyst: AI server revenue becoming majority of profits."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track AI server assembly volumes for Nvidia GB200/GB300 platforms",
+          "Monitor EV segment progress and customer diversification beyond Apple",
+          "Watch margin trends from AI hardware mix shift and operating leverage"
+        ]
+      }
+    },
+    {
+      "id": "007660",
+      "name": "Isu Petasys",
+      "name_jp": "イス・ペタシス",
+      "ticker_full": "007660.KS",
+      "sector": "PCB Manufacturing — High-multilayer for Servers, Networking, HPC",
+      "investment_view": "bullish",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Isu Petasys is a leading South Korean manufacturer of high-multilayer PCBs (printed circuit boards) for servers, networking equipment, and high-performance computing. The company specializes in complex, high-layer-count boards required for AI server motherboards and high-speed networking switches.",
+        "thesis": "Isu Petasys is a picks-and-shovels play on AI infrastructure. AI servers require significantly more complex and higher-layer-count PCBs than traditional servers, driving both volume and ASP growth. The company's technical capabilities in high-multilayer PCBs position it well for next-gen AI server platforms.",
+        "key_assumptions": [
+          "High-layer-count PCB demand for AI servers grows 30%+ annually",
+          "ASP uplift from AI server PCBs vs traditional server boards is 2-3x",
+          "Major customer relationships with server OEMs remain strong",
+          "Capacity expansion for next-gen substrates completed on schedule"
+        ],
+        "risk_factors": [
+          "Customer concentration risk with limited number of server OEMs",
+          "Capacity expansion execution and capital expenditure burden",
+          "Competition from Taiwanese and Japanese PCB makers",
+          "Raw material cost inflation (copper foil, laminates)"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "680B",
+            "operatingProfit": "82B",
+            "netProfit": "62B",
+            "eps": "3,100"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "920B",
+            "operatingProfit": "125B",
+            "netProfit": "95B",
+            "eps": "4,750"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "1,200B",
+            "operatingProfit": "175B",
+            "netProfit": "133B",
+            "eps": "6,650",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "1,450B",
+            "operatingProfit": "218B",
+            "netProfit": "166B",
+            "eps": "8,300",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Server & HPC PCBs",
+            "revenue": "580B",
+            "share": "63%"
+          },
+          {
+            "name": "Networking PCBs",
+            "revenue": "210B",
+            "share": "23%"
+          },
+          {
+            "name": "Industrial & Other",
+            "revenue": "130B",
+            "share": "14%"
+          }
+        ],
+        "current_price": "78,000",
+        "fair_value": "100,000",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "11.7x",
+            "sectorAvg": "15x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "7.5x",
+            "sectorAvg": "10x"
+          },
+          {
+            "label": "P/B",
+            "current": "2.8x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "1.2%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "130,000",
+            "methodology": "16x FY27E EPS on AI server PCB supercycle",
+            "upside": "+67%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "100,000",
+            "methodology": "12x FY27E EPS with steady demand growth",
+            "upside": "+28%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "50,000",
+            "methodology": "8x FY26E EPS on customer order pushouts",
+            "upside": "-36%"
+          }
+        ],
+        "valuation_notes": "Isu Petasys trades at a discount to the broader PCB industry on forward P/E, reflecting its mid-cap status and customer concentration. AI server PCB demand provides a clear structural growth driver. Valuation should re-rate as AI revenue becomes majority of the mix."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track high-layer-count PCB demand for AI servers and order trends from major OEM customers",
+          "Monitor capacity expansion progress for next-gen substrates",
+          "Watch for competitive dynamics vs Taiwanese and Japanese PCB manufacturers"
+        ]
+      }
+    },
+    {
+      "id": "6920",
+      "name": "Lasertec",
+      "name_jp": "レーザーテック",
+      "ticker_full": "6920.T",
+      "sector": "Semiconductor Inspection — EUV Mask Inspection/Metrology",
+      "investment_view": "neutral",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Lasertec is a Japanese semiconductor equipment company specializing in EUV mask inspection and metrology systems. The company holds a near-monopoly position in actinic (EUV wavelength) mask blank and patterned mask inspection, which is critical for advanced node semiconductor manufacturing at 5nm and below.",
+        "thesis": "Lasertec's EUV mask inspection monopoly is a unique competitive moat, but the stock's premium valuation requires continued order growth to justify. The transition to High-NA EUV presents both opportunity (new tool cycle) and risk (development timeline uncertainty). KLA's competitive entry is an emerging threat.",
+        "key_assumptions": [
+          "EUV mask inspection demand grows with advancing node adoption",
+          "High-NA EUV inspection tools are developed and qualified on schedule",
+          "Near-monopoly position in actinic inspection is defended against KLA",
+          "Customer adoption at TSMC, Samsung, and Intel continues"
+        ],
+        "risk_factors": [
+          "KLA competitive entry in EUV mask inspection",
+          "High-NA EUV inspection development delays or cost overruns",
+          "Customer base limited to handful of leading-edge foundries/IDMs",
+          "Valuation premium vulnerable to any growth deceleration"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "220B",
+            "operatingProfit": "88B",
+            "netProfit": "65B",
+            "eps": "685"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "255B",
+            "operatingProfit": "105B",
+            "netProfit": "78B",
+            "eps": "821"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "290B",
+            "operatingProfit": "122B",
+            "netProfit": "91B",
+            "eps": "958",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "330B",
+            "operatingProfit": "142B",
+            "netProfit": "106B",
+            "eps": "1,116",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "EUV Mask Inspection",
+            "revenue": "180B",
+            "share": "71%"
+          },
+          {
+            "name": "Mask Metrology & Other Inspection",
+            "revenue": "52B",
+            "share": "20%"
+          },
+          {
+            "name": "Services & Maintenance",
+            "revenue": "23B",
+            "share": "9%"
+          }
+        ],
+        "current_price": "18,200",
+        "fair_value": "19,500",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "19.0x",
+            "sectorAvg": "28x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "13.5x",
+            "sectorAvg": "20x"
+          },
+          {
+            "label": "P/B",
+            "current": "5.8x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "1.2%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "28,000",
+            "methodology": "26x FY27E EPS on High-NA EUV tool cycle win",
+            "upside": "+54%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "19,500",
+            "methodology": "18x FY27E EPS with moderate growth",
+            "upside": "+7%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "12,000",
+            "methodology": "13x FY26E EPS on KLA competitive threat",
+            "upside": "-34%"
+          }
+        ],
+        "valuation_notes": "Lasertec has de-rated significantly from its 2023 highs on KLA competitive concerns and short-seller scrutiny. Current valuation is more reasonable. Key catalyst: High-NA EUV inspection tool qualification. Key risk: KLA gaining share in actinic inspection."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "edinet",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track EUV mask inspection tool orders and competitive dynamics vs KLA",
+          "Monitor High-NA EUV inspection development timeline and customer interest",
+          "Watch for customer adoption signals at leading foundries (TSMC, Samsung, Intel)"
+        ]
+      }
+    },
+    {
+      "id": "2301",
+      "name": "Lite-On Technology",
+      "name_jp": "光宝科技",
+      "ticker_full": "2301.TW",
+      "sector": "Optoelectronics, Power Supplies, SSDs",
+      "investment_view": "neutral",
+      "conviction": "low",
+      "profile_json": {
+        "overview": "Lite-On Technology is a diversified Taiwanese electronics company with key businesses in server power supplies, SSDs, optoelectronics (LEDs, image sensors), and automotive electronics. The company is a second-tier supplier in multiple segments with exposure to AI server infrastructure buildout.",
+        "thesis": "Lite-On is a moderate beneficiary of AI infrastructure demand through its server power supply and SSD businesses. However, the company lacks the dominant market positions or high-growth profiles of pure-play peers. Valuation is undemanding, reflecting the diversified, moderate-growth nature of the business.",
+        "key_assumptions": [
+          "Server power supply demand grows with AI data center buildout",
+          "Enterprise SSD volumes benefit from AI storage requirements",
+          "Optoelectronics in automotive applications provides steady growth",
+          "Margins remain stable despite competitive pricing pressure"
+        ],
+        "risk_factors": [
+          "Competition from Delta Electronics and Chicony in server power supplies",
+          "SSD segment faces pricing volatility tied to NAND market cycles",
+          "Diversified portfolio lacks clear competitive advantages",
+          "Optoelectronics segment faces secular LED margin pressure"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "210B",
+            "operatingProfit": "16.5B",
+            "netProfit": "13.8B",
+            "eps": "5.95"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "232B",
+            "operatingProfit": "19.2B",
+            "netProfit": "16.0B",
+            "eps": "6.90"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "255B",
+            "operatingProfit": "22.0B",
+            "netProfit": "18.3B",
+            "eps": "7.90",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "275B",
+            "operatingProfit": "24.5B",
+            "netProfit": "20.4B",
+            "eps": "8.80",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Power & Energy (Server PSU)",
+            "revenue": "98B",
+            "share": "42%"
+          },
+          {
+            "name": "Storage (SSDs)",
+            "revenue": "65B",
+            "share": "28%"
+          },
+          {
+            "name": "Optoelectronics",
+            "revenue": "45B",
+            "share": "19%"
+          },
+          {
+            "name": "Other (Automotive, IoT)",
+            "revenue": "24B",
+            "share": "11%"
+          }
+        ],
+        "current_price": "110",
+        "fair_value": "115",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "13.9x",
+            "sectorAvg": "15x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "8.5x",
+            "sectorAvg": "10x"
+          },
+          {
+            "label": "P/B",
+            "current": "1.8x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "4.5%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "145",
+            "methodology": "17x FY27E EPS on AI server power + SSD upside",
+            "upside": "+32%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "115",
+            "methodology": "13x FY27E EPS with moderate growth",
+            "upside": "+5%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "80",
+            "methodology": "10x FY26E EPS on margin pressure",
+            "upside": "-27%"
+          }
+        ],
+        "valuation_notes": "Lite-On is fairly valued at current levels with limited catalysts for re-rating. Attractive dividend yield (4.5%) provides income support. Upside if AI server power supply and SSD demand surprise positively."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track server power supply and SSD demand from AI data center build-out",
+          "Monitor optoelectronics segment trends in automotive and industrial applications",
+          "Watch for margin trends and competitive positioning vs Delta Electronics"
+        ]
+      }
+    },
+    {
+      "id": "2454",
+      "name": "MediaTek",
+      "name_jp": "メディアテック",
+      "ticker_full": "2454.TW",
+      "sector": "Fabless Semiconductor — Mobile SoC, Connectivity, Smart Devices",
+      "investment_view": "bullish",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "MediaTek is the world's largest fabless semiconductor company by unit shipments, specializing in mobile SoCs (system-on-chips), connectivity chips (Wi-Fi, Bluetooth), and smart device processors. The company competes primarily with Qualcomm in the mobile chip market and is expanding into edge AI, automotive, and IoT.",
+        "thesis": "MediaTek is positioned to benefit from the proliferation of on-device AI across smartphones, PCs, and edge devices. The Dimensity 9400 series demonstrates competitive flagship SoC performance, enabling share gains in the premium Android market. Edge AI/on-device AI adoption represents a potential step-change in ASPs and margins.",
+        "key_assumptions": [
+          "Flagship mobile SoC market share gains vs Qualcomm in premium Android segment",
+          "Edge AI/on-device AI adoption drives ASP uplift across product lines",
+          "Automotive chip revenue begins contributing meaningfully by 2027",
+          "Wi-Fi 7 and connectivity chip cycle drives volume growth"
+        ],
+        "risk_factors": [
+          "Qualcomm competitive response in premium SoC segment",
+          "Smartphone market growth remains sluggish overall",
+          "Dependence on TSMC for advanced node manufacturing",
+          "China market exposure creates regulatory risk"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "535B",
+            "operatingProfit": "88B",
+            "netProfit": "78B",
+            "eps": "49.2"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "645B",
+            "operatingProfit": "118B",
+            "netProfit": "105B",
+            "eps": "66.2"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "760B",
+            "operatingProfit": "148B",
+            "netProfit": "132B",
+            "eps": "83.2",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "870B",
+            "operatingProfit": "175B",
+            "netProfit": "156B",
+            "eps": "98.3",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Mobile (Smartphone SoCs)",
+            "revenue": "385B",
+            "share": "60%"
+          },
+          {
+            "name": "Connectivity & IoT",
+            "revenue": "135B",
+            "share": "21%"
+          },
+          {
+            "name": "Computing (Chromebook, Smart TV)",
+            "revenue": "75B",
+            "share": "12%"
+          },
+          {
+            "name": "Automotive & Other",
+            "revenue": "50B",
+            "share": "7%"
+          }
+        ],
+        "current_price": "1,480",
+        "fair_value": "1,750",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "17.8x",
+            "sectorAvg": "22x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "12.2x",
+            "sectorAvg": "16x"
+          },
+          {
+            "label": "P/B",
+            "current": "3.5x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "2.8%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "2,150",
+            "methodology": "22x FY27E EPS on edge AI adoption and flagship share gains",
+            "upside": "+45%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "1,750",
+            "methodology": "18x FY27E EPS with moderate growth",
+            "upside": "+18%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "1,050",
+            "methodology": "13x FY26E EPS on Qualcomm competitive pressure",
+            "upside": "-29%"
+          }
+        ],
+        "valuation_notes": "MediaTek trades at a discount to Qualcomm (22x) on forward P/E, reflecting lower margins and mid-range smartphone exposure. Discount could narrow if flagship SoC market share gains continue and edge AI drives ASP uplift. Attractive dividend yield for a semiconductor company."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track flagship mobile SoC market share trends vs Qualcomm",
+          "Monitor edge AI and on-device AI chip adoption across smartphones and PCs",
+          "Watch automotive and IoT diversification progress and revenue contribution"
+        ]
+      }
+    },
+    {
+      "id": "2408",
+      "name": "Nanya Technology",
+      "name_jp": "南亜科技",
+      "ticker_full": "2408.TW",
+      "sector": "Memory — DRAM",
+      "investment_view": "bearish",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Nanya Technology is Taiwan's sole DRAM manufacturer, focused on specialty and consumer DRAM products. The company is significantly smaller than Samsung, SK Hynix, and Micron, and has lagged in technology migration. Nanya primarily serves consumer electronics, PC, and industrial applications rather than the high-growth server/HBM segments.",
+        "thesis": "Nanya is a laggard in the DRAM industry with limited exposure to the AI-driven HBM and server DRAM growth story. The company's technology node trails leaders by 2+ generations, restricting its ability to compete in high-margin advanced DRAM segments. DRAM pricing improvements benefit Nanya, but structural competitiveness issues cap the upside.",
+        "key_assumptions": [
+          "DRAM pricing recovery supports near-term profitability improvement",
+          "1A/1B nm technology migration progresses but remains behind leaders",
+          "Consumer and specialty DRAM demand provides stable baseline revenue",
+          "HBM-related developments remain exploratory with no near-term revenue"
+        ],
+        "risk_factors": [
+          "Technology gap vs Samsung/SK Hynix/Micron widening",
+          "No meaningful HBM capability limits participation in AI demand",
+          "DRAM pricing downturn would disproportionately impact margins",
+          "Customer base concentrated in lower-value DRAM segments"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "38B",
+            "operatingProfit": "-5.2B",
+            "netProfit": "-3.8B",
+            "eps": "-1.24"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "48B",
+            "operatingProfit": "2.5B",
+            "netProfit": "2.8B",
+            "eps": "0.91"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "55B",
+            "operatingProfit": "6.8B",
+            "netProfit": "5.9B",
+            "eps": "1.92",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "60B",
+            "operatingProfit": "8.5B",
+            "netProfit": "7.4B",
+            "eps": "2.41",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Consumer DRAM",
+            "revenue": "22B",
+            "share": "46%"
+          },
+          {
+            "name": "Specialty DRAM (Industrial, Auto)",
+            "revenue": "15B",
+            "share": "31%"
+          },
+          {
+            "name": "Mobile DRAM",
+            "revenue": "8B",
+            "share": "17%"
+          },
+          {
+            "name": "Other",
+            "revenue": "3B",
+            "share": "6%"
+          }
+        ],
+        "current_price": "52",
+        "fair_value": "42",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "27.1x",
+            "sectorAvg": "12x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "9.5x",
+            "sectorAvg": "6x"
+          },
+          {
+            "label": "P/B",
+            "current": "1.2x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "0.5%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "65",
+            "methodology": "28x FY27E EPS on DRAM super-cycle pricing",
+            "upside": "+25%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "42",
+            "methodology": "18x FY27E EPS with moderate recovery",
+            "upside": "-19%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "28",
+            "methodology": "12x trough earnings on DRAM downturn",
+            "upside": "-46%"
+          }
+        ],
+        "valuation_notes": "Nanya appears overvalued on normalized earnings basis compared to larger DRAM peers. The stock trades above fair value on cyclical recovery hopes, but structural competitive disadvantages limit long-term upside. No HBM exposure is a significant handicap in the AI era."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Monitor DRAM pricing trends and supply/demand balance across memory segments",
+          "Track technology migration progress at 1A/1B nm nodes",
+          "Watch for any HBM-related developments or strategic partnerships"
+        ]
+      }
+    },
+    {
+      "id": "6752",
+      "name": "Panasonic",
+      "name_jp": "パナソニック",
+      "ticker_full": "6752.T",
+      "sector": "Diversified Electronics, Batteries, Industrial Solutions",
+      "investment_view": "neutral",
+      "conviction": "low",
+      "profile_json": {
+        "overview": "Panasonic Holdings is a diversified Japanese electronics and industrial conglomerate. The company is a major EV battery supplier (primarily to Tesla), and also operates in consumer electronics, housing/building solutions, automotive systems, and industrial automation. Panasonic is undergoing a strategic shift toward energy and industrial solutions.",
+        "thesis": "Panasonic's EV battery business is the key value driver, but execution challenges and Tesla volume volatility create uncertainty. The company's diversified portfolio generates stable cash flow but lacks high-growth catalysts outside batteries. Strategic portfolio changes (potential Panasonic Automotive spinoff) could unlock value.",
+        "key_assumptions": [
+          "EV battery volumes grow with Tesla Gigafactory expansion and new customers",
+          "Energy storage (grid-scale batteries) becomes a meaningful revenue contributor",
+          "Supply chain/factory automation benefits from reshoring trends",
+          "Strategic portfolio rationalization continues with potential segment spin-offs"
+        ],
+        "risk_factors": [
+          "Tesla battery volume volatility and pricing pressure",
+          "Competition from CATL, BYD, and LG in EV batteries",
+          "Consumer electronics segment faces secular decline",
+          "Conglomerate discount persists despite restructuring"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "8,500B",
+            "operatingProfit": "380B",
+            "netProfit": "245B",
+            "eps": "100"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "8,750B",
+            "operatingProfit": "410B",
+            "netProfit": "265B",
+            "eps": "108"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "9,100B",
+            "operatingProfit": "455B",
+            "netProfit": "295B",
+            "eps": "120",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "9,500B",
+            "operatingProfit": "505B",
+            "netProfit": "328B",
+            "eps": "134",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Energy (EV Batteries, Storage)",
+            "revenue": "1,150B",
+            "share": "13%"
+          },
+          {
+            "name": "Industry (Automation, FA)",
+            "revenue": "1,380B",
+            "share": "16%"
+          },
+          {
+            "name": "Automotive Systems",
+            "revenue": "1,520B",
+            "share": "17%"
+          },
+          {
+            "name": "Connect (B2B Solutions)",
+            "revenue": "1,210B",
+            "share": "14%"
+          },
+          {
+            "name": "Living Spaces & Consumer",
+            "revenue": "3,490B",
+            "share": "40%"
+          }
+        ],
+        "current_price": "1,580",
+        "fair_value": "1,650",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "13.2x",
+            "sectorAvg": "15x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "5.8x",
+            "sectorAvg": "8x"
+          },
+          {
+            "label": "P/B",
+            "current": "1.0x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "2.5%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "2,200",
+            "methodology": "17x FY27E EPS on battery growth + portfolio value unlock",
+            "upside": "+39%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "1,650",
+            "methodology": "12x FY27E EPS with steady improvement",
+            "upside": "+4%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "1,100",
+            "methodology": "9x FY26E EPS on Tesla battery order weakness",
+            "upside": "-30%"
+          }
+        ],
+        "valuation_notes": "Panasonic trades at a conglomerate discount with P/B near 1.0x. Battery business value is partially offset by low-growth consumer segments. Catalyst: segment spin-offs or battery business IPO to unlock hidden value."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "edinet",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track battery business growth including EV and energy storage volumes",
+          "Monitor supply chain and factory automation demand trends",
+          "Watch for strategic portfolio changes including potential segment spin-offs"
+        ]
+      }
+    },
+    {
+      "id": "6323",
+      "name": "Rorze",
+      "name_jp": "ローツェ",
+      "ticker_full": "6323.T",
+      "sector": "Semiconductor Automation — Wafer/Panel Handling Robots",
+      "investment_view": "bullish",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Rorze Corporation is a Japanese manufacturer of wafer and panel handling robots used in semiconductor fabs and flat panel display (FPD) manufacturing. The company specializes in automated transfer systems that move wafers between process tools, with growing capabilities in advanced packaging automation.",
+        "thesis": "Rorze is a niche but high-quality beneficiary of the semiconductor fab construction cycle. Every new fab requires extensive wafer handling automation, and Rorze's systems are embedded in the workflow of major chipmakers. The advanced packaging buildout (chiplets, HBM) is an emerging growth vector for panel-level handling systems.",
+        "key_assumptions": [
+          "Wafer handling robot orders correlate with global fab construction spending",
+          "Panel-level packaging automation becomes a meaningful revenue contributor",
+          "Market share is maintained against competitors like Brooks Automation",
+          "New product launches in advanced packaging expand addressable market"
+        ],
+        "risk_factors": [
+          "Fab construction cycle is lumpy and can delay orders",
+          "Competition from Brooks Automation and other handling system makers",
+          "Small company with limited diversification",
+          "Yen strength impacts export competitiveness"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "85B",
+            "operatingProfit": "23B",
+            "netProfit": "17B",
+            "eps": "665"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "98B",
+            "operatingProfit": "28B",
+            "netProfit": "21B",
+            "eps": "820"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "118B",
+            "operatingProfit": "35B",
+            "netProfit": "26B",
+            "eps": "1,015",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "135B",
+            "operatingProfit": "42B",
+            "netProfit": "31B",
+            "eps": "1,210",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Semiconductor Equipment (Wafer Handling)",
+            "revenue": "72B",
+            "share": "73%"
+          },
+          {
+            "name": "FPD Equipment (Panel Handling)",
+            "revenue": "18B",
+            "share": "19%"
+          },
+          {
+            "name": "Other Equipment & Services",
+            "revenue": "8B",
+            "share": "8%"
+          }
+        ],
+        "current_price": "18,500",
+        "fair_value": "22,000",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "18.2x",
+            "sectorAvg": "28x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "12.0x",
+            "sectorAvg": "20x"
+          },
+          {
+            "label": "P/B",
+            "current": "4.5x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "1.5%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "28,000",
+            "methodology": "24x FY27E EPS on fab construction supercycle + packaging wins",
+            "upside": "+51%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "22,000",
+            "methodology": "18x FY27E EPS with moderate fab cycle growth",
+            "upside": "+19%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "13,000",
+            "methodology": "13x FY26E EPS on fab construction delays",
+            "upside": "-30%"
+          }
+        ],
+        "valuation_notes": "Rorze trades at a significant discount to larger semi equipment peers on forward P/E, reflecting its smaller scale and niche positioning. Discount is partly warranted but could narrow as advanced packaging automation becomes a recognized growth driver."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "edinet",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track wafer handling robot orders tied to global fab construction activity",
+          "Monitor market share gains in panel-level packaging automation",
+          "Watch for new product launches and technology developments in advanced packaging handling"
+        ]
+      }
+    },
+    {
+      "id": "000660",
+      "name": "SK Hynix",
+      "name_jp": "SKハイニックス",
+      "ticker_full": "000660.KS",
+      "sector": "Memory — DRAM, NAND, HBM",
+      "investment_view": "bullish",
+      "conviction": "high",
+      "profile_json": {
+        "overview": "SK Hynix is the world's second-largest memory chipmaker and the undisputed leader in HBM (High Bandwidth Memory) for AI applications. The company supplies HBM3E to Nvidia and other AI chip makers, holds the leading market position in this high-margin segment, and is developing HBM4 for next-generation AI accelerators.",
+        "thesis": "SK Hynix is the highest-conviction memory play on the AI supercycle. The company's dominant HBM position provides a structural revenue and margin uplift that differentiates it from commodity DRAM peers. HBM supply is allocated to Nvidia and hyperscalers through multi-year agreements, providing unprecedented earnings visibility for a memory company.",
+        "key_assumptions": [
+          "HBM revenue grows 50%+ annually through 2027 driven by AI accelerator demand",
+          "HBM supply allocation to Nvidia/hyperscalers maintained at premium pricing",
+          "Conventional DRAM/NAND pricing recovery supports base business profitability",
+          "Advanced packaging capacity expansion for HBM executes on schedule"
+        ],
+        "risk_factors": [
+          "Samsung HBM qualification at Nvidia would intensify competition",
+          "AI capex cycle slowdown would reduce HBM demand growth",
+          "DRAM/NAND pricing downturn impacting base business",
+          "Advanced packaging capacity bottleneck delays"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "66.2T",
+            "operatingProfit": "23.5T",
+            "netProfit": "19.8T",
+            "eps": "27,200"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "82.0T",
+            "operatingProfit": "32.0T",
+            "netProfit": "26.5T",
+            "eps": "36,400"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "100.0T",
+            "operatingProfit": "42.5T",
+            "netProfit": "35.2T",
+            "eps": "48,400",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "115.0T",
+            "operatingProfit": "50.0T",
+            "netProfit": "41.5T",
+            "eps": "57,000",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "DRAM (incl. HBM)",
+            "revenue": "68.0T",
+            "share": "83%"
+          },
+          {
+            "name": "NAND Flash",
+            "revenue": "12.5T",
+            "share": "15%"
+          },
+          {
+            "name": "Other (Foundry, CIS)",
+            "revenue": "1.5T",
+            "share": "2%"
+          }
+        ],
+        "current_price": "225,000",
+        "fair_value": "280,000",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "4.6x",
+            "sectorAvg": "12x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "3.2x",
+            "sectorAvg": "6x"
+          },
+          {
+            "label": "P/B",
+            "current": "2.5x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "1.0%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "350,000",
+            "methodology": "7x FY27E EPS on sustained HBM supercycle",
+            "upside": "+56%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "280,000",
+            "methodology": "5x FY27E EPS with moderate HBM growth",
+            "upside": "+24%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "150,000",
+            "methodology": "3x FY26E EPS on memory downturn + Samsung competition",
+            "upside": "-33%"
+          }
+        ],
+        "valuation_notes": "SK Hynix trades at historically low P/E multiples despite peak earnings, reflecting typical memory cycle valuation compression at the top. However, HBM provides structural differentiation vs prior cycles. The market may be underappreciating the durability of HBM earnings. Key risk: Samsung HBM qualification."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track HBM revenue growth and supply allocation to Nvidia and hyperscalers",
+          "Monitor DRAM/NAND pricing trends and inventory levels across the supply chain",
+          "Watch capacity expansion progress in advanced packaging for HBM production"
+        ]
+      }
+    },
+    {
+      "id": "005930",
+      "name": "Samsung Electronics",
+      "name_jp": "サムスン電子",
+      "ticker_full": "005930.KS",
+      "sector": "Memory, Foundry, Displays, Consumer Electronics",
+      "investment_view": "neutral",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Samsung Electronics is the world's largest memory chipmaker and a major player in semiconductor foundry, displays (OLED, LCD), and consumer electronics (smartphones, TVs). The company is the leading DRAM and NAND supplier globally and is ramping HBM production to compete with SK Hynix for AI-related demand.",
+        "thesis": "Samsung faces a pivotal period. The company needs to execute on HBM3E/HBM4 qualification with Nvidia to participate in the AI memory supercycle, while its foundry business must narrow the yield gap vs TSMC at 3nm/2nm. Memory pricing recovery is supportive, but execution risks in both HBM and foundry create a balanced risk/reward at current levels.",
+        "key_assumptions": [
+          "HBM3E qualification at Nvidia is achieved by mid-2026",
+          "Foundry yields at 3nm improve to competitive levels",
+          "DRAM/NAND pricing cycle remains favorable through 2026",
+          "Memory business carries the company while foundry ramps"
+        ],
+        "risk_factors": [
+          "HBM qualification delays vs SK Hynix competitive lead",
+          "Foundry yield issues at 3nm/2nm persist, losing customers to TSMC",
+          "Memory pricing downturn if supply/demand balance shifts",
+          "Consumer electronics segment faces margin pressure"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "303T",
+            "operatingProfit": "32.7T",
+            "netProfit": "24.8T",
+            "eps": "3,650"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "330T",
+            "operatingProfit": "42.5T",
+            "netProfit": "32.2T",
+            "eps": "4,738"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "365T",
+            "operatingProfit": "53.0T",
+            "netProfit": "40.2T",
+            "eps": "5,912",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "392T",
+            "operatingProfit": "60.0T",
+            "netProfit": "45.5T",
+            "eps": "6,691",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Semiconductor (Memory + Foundry)",
+            "revenue": "125T",
+            "share": "38%"
+          },
+          {
+            "name": "Mobile (Smartphones)",
+            "revenue": "110T",
+            "share": "33%"
+          },
+          {
+            "name": "Display (OLED, LCD)",
+            "revenue": "38T",
+            "share": "12%"
+          },
+          {
+            "name": "Consumer Electronics & Other",
+            "revenue": "57T",
+            "share": "17%"
+          }
+        ],
+        "current_price": "62,000",
+        "fair_value": "72,000",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "10.5x",
+            "sectorAvg": "15x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "4.2x",
+            "sectorAvg": "8x"
+          },
+          {
+            "label": "P/B",
+            "current": "1.2x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "2.3%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "95,000",
+            "methodology": "15x FY27E EPS on HBM qualification + foundry recovery",
+            "upside": "+53%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "72,000",
+            "methodology": "11x FY27E EPS with moderate memory recovery",
+            "upside": "+16%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "48,000",
+            "methodology": "8x FY26E EPS on HBM failure + foundry continued weakness",
+            "upside": "-23%"
+          }
+        ],
+        "valuation_notes": "Samsung trades at a deep discount to SK Hynix (15x) and TSMC (22x), reflecting execution concerns in HBM and foundry. Discount is partly warranted but provides asymmetric upside if HBM qualification is achieved. Key catalyst: Nvidia HBM3E validation."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track HBM3E/HBM4 qualification progress vs SK Hynix, particularly Nvidia validation",
+          "Monitor foundry yield improvements at 3nm/2nm vs TSMC competitive gap",
+          "Watch memory pricing cycle trends and AI-driven DRAM demand signals"
+        ]
+      }
+    },
+    {
+      "id": "7735",
+      "name": "Screen Holdings",
+      "name_jp": "SCREENホールディングス",
+      "ticker_full": "7735.T",
+      "sector": "Semiconductor Equipment — Cleaning, Coating, Lithography",
+      "investment_view": "bullish",
+      "conviction": "medium",
+      "profile_json": {
+        "overview": "Screen Holdings (formerly Dainippon Screen) is a Japanese semiconductor equipment company specializing in cleaning, coating, and lithography equipment. The company holds a leading market share in single-wafer cleaning systems, which are critical for advanced node manufacturing. Screen also has a display equipment business.",
+        "thesis": "Screen Holdings benefits from the structural trend toward more cleaning steps at advanced nodes. As EUV and multi-patterning increase, the number of cleaning steps per wafer rises significantly, expanding Screen's addressable market. The company's strong position with foundry and memory customers provides order visibility tied to fab construction cycles.",
+        "key_assumptions": [
+          "Semiconductor cleaning equipment orders grow with fab construction spending",
+          "Advanced node adoption increases cleaning steps per wafer by 20-30%",
+          "New tool qualifications at foundries and memory makers progress",
+          "Display equipment provides counter-cyclical diversification"
+        ],
+        "risk_factors": [
+          "Fab construction cycle slowdown reduces cleaning equipment orders",
+          "Competition from TEL and Lam in cleaning equipment",
+          "China export controls could limit equipment sales",
+          "Display equipment segment faces structural decline in profitability"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "540B",
+            "operatingProfit": "108B",
+            "netProfit": "80B",
+            "eps": "845"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "610B",
+            "operatingProfit": "128B",
+            "netProfit": "95B",
+            "eps": "1,003"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "700B",
+            "operatingProfit": "154B",
+            "netProfit": "114B",
+            "eps": "1,203",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "780B",
+            "operatingProfit": "178B",
+            "netProfit": "132B",
+            "eps": "1,394",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "SPE (Semiconductor Cleaning)",
+            "revenue": "478B",
+            "share": "78%"
+          },
+          {
+            "name": "Display Manufacturing",
+            "revenue": "72B",
+            "share": "12%"
+          },
+          {
+            "name": "Graphic Arts & Other",
+            "revenue": "60B",
+            "share": "10%"
+          }
+        ],
+        "current_price": "13,200",
+        "fair_value": "16,000",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "11.0x",
+            "sectorAvg": "28x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "7.8x",
+            "sectorAvg": "20x"
+          },
+          {
+            "label": "P/B",
+            "current": "2.5x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "2.2%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "21,000",
+            "methodology": "16x FY27E EPS on cleaning equipment supercycle",
+            "upside": "+59%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "16,000",
+            "methodology": "12x FY27E EPS with moderate order growth",
+            "upside": "+21%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "9,500",
+            "methodology": "8x FY26E EPS on fab construction slowdown",
+            "upside": "-28%"
+          }
+        ],
+        "valuation_notes": "Screen Holdings trades at a deep discount to semi equipment peers on forward P/E, partly reflecting its smaller scale and display equipment drag. Discount is excessive given the structural cleaning intensity growth story. Catalyst: sustained order growth and display segment improvements."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "edinet",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track semiconductor cleaning equipment orders and new tool qualifications",
+          "Monitor cleaning step intensity trends at advanced nodes (EUV, multi-patterning)",
+          "Watch display equipment diversification and overall segment profitability"
+        ]
+      }
+    },
+    {
+      "id": "2330",
+      "name": "TSMC",
+      "name_jp": "台湾積体電路製造",
+      "ticker_full": "2330.TW",
+      "sector": "Semiconductor Foundry — Advanced Logic Manufacturing",
+      "investment_view": "bullish",
+      "conviction": "high",
+      "profile_json": {
+        "overview": "Taiwan Semiconductor Manufacturing Company (TSMC) is the world's largest and most technologically advanced semiconductor foundry. The company manufactures chips for leading fabless companies including Apple, Nvidia, AMD, Qualcomm, and Broadcom. TSMC dominates advanced node manufacturing with >90% market share at 5nm and below.",
+        "thesis": "TSMC is the foundational infrastructure provider for the AI revolution. Every major AI accelerator (Nvidia, AMD, Google TPU, custom ASICs) is manufactured by TSMC at leading-edge nodes. The company's N3/N2 technology ramp and unmatched manufacturing scale create a durable competitive moat. AI wafer demand provides a multi-year growth runway with improving margins from favorable mix.",
+        "key_assumptions": [
+          "N3/N2 technology ramp and capacity utilization reach 90%+ by 2027",
+          "AI accelerator wafer demand grows 40%+ annually through 2027",
+          "Advanced node pricing power is maintained at premium levels",
+          "Overseas fab construction (Arizona, Japan, Germany) progresses on schedule"
+        ],
+        "risk_factors": [
+          "Geopolitical risk to Taiwan-based operations (cross-strait tensions)",
+          "Customer concentration (Apple + Nvidia >35% of revenue)",
+          "Capital expenditure intensity may pressure free cash flow",
+          "Intel foundry competitive entry at 18A/14A nodes"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "2,894B",
+            "operatingProfit": "1,362B",
+            "netProfit": "1,152B",
+            "eps": "44.4"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "3,550B",
+            "operatingProfit": "1,740B",
+            "netProfit": "1,470B",
+            "eps": "56.7"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "4,250B",
+            "operatingProfit": "2,150B",
+            "netProfit": "1,815B",
+            "eps": "69.9",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "4,850B",
+            "operatingProfit": "2,520B",
+            "netProfit": "2,128B",
+            "eps": "82.0",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Advanced (7nm and below)",
+            "revenue": "2,485B",
+            "share": "70%"
+          },
+          {
+            "name": "Mature (above 7nm)",
+            "revenue": "780B",
+            "share": "22%"
+          },
+          {
+            "name": "Advanced Packaging (CoWoS, InFO)",
+            "revenue": "285B",
+            "share": "8%"
+          }
+        ],
+        "current_price": "1,120",
+        "fair_value": "1,350",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "16.0x",
+            "sectorAvg": "22x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "11.5x",
+            "sectorAvg": "16x"
+          },
+          {
+            "label": "P/B",
+            "current": "6.8x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "1.4%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "1,650",
+            "methodology": "22x FY27E EPS on AI demand supercycle + geopolitical de-risk",
+            "upside": "+47%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "1,350",
+            "methodology": "16x FY27E EPS with sustained AI growth",
+            "upside": "+21%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "780",
+            "methodology": "12x FY26E EPS on geopolitical risk premium + cycle peak",
+            "upside": "-30%"
+          }
+        ],
+        "valuation_notes": "TSMC trades at a discount to its US ADR (TSM) and below global semiconductor peers on forward P/E, reflecting a geopolitical risk discount. This discount provides an attractive entry point for investors willing to underwrite Taiwan risk. The AI demand growth story is as strong as any in the semiconductor ecosystem."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track N3/N2 technology ramp, capacity utilization, and yield progress",
+          "Monitor AI accelerator wafer demand and customer pipeline (Nvidia, AMD, custom ASICs)",
+          "Watch overseas fab progress (Arizona, Japan, Germany) and geopolitical risk developments"
+        ]
+      }
+    },
+    {
+      "id": "8035",
+      "name": "Tokyo Electron",
+      "name_jp": "東京エレクトロン",
+      "ticker_full": "8035.T",
+      "sector": "Semiconductor Equipment — Etch, Deposition, Coater/Developer",
+      "investment_view": "bullish",
+      "conviction": "high",
+      "profile_json": {
+        "overview": "Tokyo Electron (TEL) is Japan's largest and the world's third-largest semiconductor equipment maker. Core products span etch systems, CVD/PVD deposition, coater/developers for photolithography, and cleaning systems. TEL is a key beneficiary of leading-edge node transitions and EUV adoption.",
+        "thesis": "TEL is positioned to capture outsized share of the AI-driven capex supercycle. Incremental order momentum is strong, driven by EUV-related deposition layers and advanced packaging demand. China exposure is a risk but manageable at current levels.",
+        "key_assumptions": [
+          "AI/HPC capex cycle sustains through FY2026-27",
+          "EUV multi-patterning drives incremental deposition TAM",
+          "China revenue remains at ~25% of sales without further restrictions",
+          "Etch market share gains continue vs. Lam Research"
+        ],
+        "risk_factors": [
+          "Escalation of US/Japan China export controls",
+          "Cyclical downturn in memory capex",
+          "Yen appreciation impacting competitiveness",
+          "Customer concentration risk (TSMC, Samsung)"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "1,830B",
+            "operatingProfit": "432B",
+            "netProfit": "316B",
+            "eps": "671"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "2,120B",
+            "operatingProfit": "545B",
+            "netProfit": "398B",
+            "eps": "845"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "2,450B",
+            "operatingProfit": "655B",
+            "netProfit": "478B",
+            "eps": "1,015",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "2,680B",
+            "operatingProfit": "735B",
+            "netProfit": "536B",
+            "eps": "1,138",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "SPE (Etch, Deposition)",
+            "revenue": "1,480B",
+            "share": "70%"
+          },
+          {
+            "name": "Coater/Developer",
+            "revenue": "425B",
+            "share": "20%"
+          },
+          {
+            "name": "Other / FPD",
+            "revenue": "215B",
+            "share": "10%"
+          }
+        ],
+        "current_price": "23,450",
+        "fair_value": "28,000",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "23.1x",
+            "sectorAvg": "28x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "15.8x",
+            "sectorAvg": "20x"
+          },
+          {
+            "label": "P/B",
+            "current": "4.2x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "1.8%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "32,000",
+            "methodology": "30x FY27E EPS on sustained AI capex cycle",
+            "upside": "+36%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "28,000",
+            "methodology": "25x FY27E EPS with moderate growth",
+            "upside": "+19%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "18,500",
+            "methodology": "18x FY26E EPS on China export control escalation",
+            "upside": "-21%"
+          }
+        ],
+        "valuation_notes": "TEL trades at a discount to ASML (35x) and Lam Research (28x) on forward P/E. Discount partly reflects China exposure risk. Upside catalysts: order momentum, China risk de-escalation."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "edinet",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Focus specifically on incremental order growth momentum and new business wins",
+          "Monitor China revenue exposure and any regulatory/sanctions developments",
+          "Track EUV-related deposition and coater/developer competitive positioning vs. ASML ecosystem"
+        ]
+      }
+    },
+    {
+      "id": "300308",
+      "name": "Zhongji Innolight",
+      "name_jp": "中際旭創",
+      "ticker_full": "300308.SZ",
+      "sector": "Optical Transceivers — Data Center Interconnect",
+      "investment_view": "bullish",
+      "conviction": "high",
+      "profile_json": {
+        "overview": "Zhongji Innolight is China's leading optical transceiver company and one of the largest globally, specializing in high-speed optical modules for data center interconnect. The company has emerged as a major supplier of 400G and 800G transceivers to global hyperscalers and is pioneering silicon photonics and LPO (Linear-drive Pluggable Optics) technology.",
+        "thesis": "Zhongji Innolight is at the epicenter of the AI data center optical interconnect buildout. The company's 800G/1.6T product roadmap and silicon photonics capabilities position it as a global leader in next-gen optical modules. Customer diversification across both Chinese and Western hyperscalers provides broad demand exposure, though US entity list risk remains an overhang.",
+        "key_assumptions": [
+          "800G optical module volumes grow 100%+ in 2025-26 driven by AI data center demand",
+          "1.6T product qualification and initial shipments begin in 2026",
+          "Silicon photonics and LPO technology leadership is maintained",
+          "US entity list risk does not materialize in the near term"
+        ],
+        "risk_factors": [
+          "US entity list placement would severely restrict access to Western customers",
+          "Pricing competition from Eoptolink and other Chinese transceiver makers",
+          "Component supply constraints for high-speed lasers and DSPs",
+          "Technology transition risk if silicon photonics commoditizes faster than expected"
+        ],
+        "earnings": [
+          {
+            "period": "FY2024",
+            "revenue": "18.5B",
+            "operatingProfit": "5.2B",
+            "netProfit": "4.5B",
+            "eps": "5.85"
+          },
+          {
+            "period": "FY2025",
+            "revenue": "32.0B",
+            "operatingProfit": "9.5B",
+            "netProfit": "8.2B",
+            "eps": "10.66"
+          },
+          {
+            "period": "FY2026E",
+            "revenue": "48.0B",
+            "operatingProfit": "14.8B",
+            "netProfit": "12.8B",
+            "eps": "16.64",
+            "isEstimate": true
+          },
+          {
+            "period": "FY2027E",
+            "revenue": "62.0B",
+            "operatingProfit": "19.5B",
+            "netProfit": "16.9B",
+            "eps": "21.97",
+            "isEstimate": true
+          }
+        ],
+        "segments": [
+          {
+            "name": "Data Center Optical Modules (400G/800G)",
+            "revenue": "27.0B",
+            "share": "84%"
+          },
+          {
+            "name": "Telecom Optical Modules",
+            "revenue": "3.2B",
+            "share": "10%"
+          },
+          {
+            "name": "Other Optical Products",
+            "revenue": "1.8B",
+            "share": "6%"
+          }
+        ],
+        "current_price": "220",
+        "fair_value": "280",
+        "valuation_metrics": [
+          {
+            "label": "P/E (FY26E)",
+            "current": "13.2x",
+            "sectorAvg": "22x"
+          },
+          {
+            "label": "EV/EBITDA",
+            "current": "10.5x",
+            "sectorAvg": "16x"
+          },
+          {
+            "label": "P/B",
+            "current": "7.2x"
+          },
+          {
+            "label": "Div. Yield",
+            "current": "0.5%"
+          }
+        ],
+        "valuation_scenarios": [
+          {
+            "label": "Bull Case",
+            "targetPrice": "380",
+            "methodology": "18x FY27E EPS on 1.6T ramp + Western customer retention",
+            "upside": "+73%"
+          },
+          {
+            "label": "Base Case",
+            "targetPrice": "280",
+            "methodology": "13x FY27E EPS with steady 800G volume growth",
+            "upside": "+27%"
+          },
+          {
+            "label": "Bear Case",
+            "targetPrice": "100",
+            "methodology": "6x FY26E EPS on US entity list placement",
+            "upside": "-55%"
+          }
+        ],
+        "valuation_notes": "Zhongji Innolight trades at a discount to Western optical peers (Coherent at 25x, II-VI at 20x) reflecting China/geopolitical risk premium. The discount is warranted given entity list tail risk but provides exceptional upside if risk does not materialize. Revenue growth trajectory is among the fastest in the semiconductor supply chain."
+      },
+      "sweep_criteria_json": {
+        "sources": [
+          "company_ir",
+          "reuters_nikkei",
+          "twitter",
+          "tradingview",
+          "industry"
+        ],
+        "focus": [
+          "Track 800G/1.6T optical module shipment volumes and customer diversification",
+          "Monitor silicon photonics and LPO technology leadership vs competitors",
+          "Watch for US entity list risk developments and export control changes"
         ]
       }
     }
@@ -183,7 +3095,14 @@
       "timestamp": "2026-02-06T07:12:00Z",
       "severity": "no_change",
       "summary": "Sweep completed: no change to Investment View",
-      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+      "sources_checked": [
+        "company_ir",
+        "edinet",
+        "reuters_nikkei",
+        "twitter",
+        "tradingview",
+        "industry"
+      ]
     },
     {
       "company_id": "6146",
@@ -195,9 +3114,19 @@
         "why_it_matters": "Above-consensus orders suggest advanced packaging demand may be accelerating faster than expected. If sustained, this could warrant an upward revision to our neutral thesis.",
         "recommended_action": "Monitor next quarter order data and management commentary. No change to investment view yet — single quarter beat not sufficient to shift thesis.",
         "confidence": "medium",
-        "sources": ["company_ir", "reuters_nikkei"]
+        "sources": [
+          "company_ir",
+          "reuters_nikkei"
+        ]
       },
-      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+      "sources_checked": [
+        "company_ir",
+        "edinet",
+        "reuters_nikkei",
+        "twitter",
+        "tradingview",
+        "industry"
+      ]
     },
     {
       "company_id": "6857",
@@ -209,9 +3138,20 @@
         "why_it_matters": "This directly validates our key assumption on HBM test becoming a material revenue contributor. The displacement win also demonstrates Advantest's competitive moat in advanced memory test.",
         "recommended_action": "Update earnings model to reflect HBM test revenue upside. Consider raising conviction from high to very high. Flag for manual review of valuation impact.",
         "confidence": "high",
-        "sources": ["industry", "reuters_nikkei", "twitter"]
+        "sources": [
+          "industry",
+          "reuters_nikkei",
+          "twitter"
+        ]
       },
-      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+      "sources_checked": [
+        "company_ir",
+        "edinet",
+        "reuters_nikkei",
+        "twitter",
+        "tradingview",
+        "industry"
+      ]
     },
     {
       "company_id": "8035",
@@ -223,23 +3163,47 @@
         "why_it_matters": "China revenue risk remains a key assumption in the thesis. While this update is not material, it signals continued regulatory attention. TEL's China revenue (~25% of sales) remains exposed to potential future escalation.",
         "recommended_action": "No change to investment view. Continue monitoring for any escalation in Japan-specific export controls.",
         "confidence": "medium",
-        "sources": ["reuters_nikkei", "industry"]
+        "sources": [
+          "reuters_nikkei",
+          "industry"
+        ]
       },
-      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+      "sources_checked": [
+        "company_ir",
+        "edinet",
+        "reuters_nikkei",
+        "twitter",
+        "tradingview",
+        "industry"
+      ]
     },
     {
       "company_id": "6857",
       "timestamp": "2026-02-05T07:13:00Z",
       "severity": "no_change",
       "summary": "Sweep completed: no change to Investment View",
-      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+      "sources_checked": [
+        "company_ir",
+        "edinet",
+        "reuters_nikkei",
+        "twitter",
+        "tradingview",
+        "industry"
+      ]
     },
     {
       "company_id": "6146",
       "timestamp": "2026-02-05T07:11:00Z",
       "severity": "no_change",
       "summary": "Sweep completed: no change to Investment View",
-      "sources_checked": ["company_ir", "edinet", "reuters_nikkei", "twitter", "tradingview", "industry"]
+      "sources_checked": [
+        "company_ir",
+        "edinet",
+        "reuters_nikkei",
+        "twitter",
+        "tradingview",
+        "industry"
+      ]
     }
   ]
 }
