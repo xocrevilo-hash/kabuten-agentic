@@ -1,8 +1,10 @@
 {
   "crons": [
-    {
-      "path": "/api/sweep/run",
-      "schedule": "0 20 * * *"
-    }
+    { "path": "/api/sweep/run?batch=1", "schedule": "0 21 * * *" },
+    { "path": "/api/sweep/run?batch=2", "schedule": "10 21 * * *" },
+    { "path": "/api/sweep/run?batch=3", "schedule": "20 21 * * *" },
+    { "path": "/api/sweep/run?batch=4", "schedule": "30 21 * * *" },
+    { "path": "/api/sweep/run?batch=5", "schedule": "40 21 * * *" },
+    { "path": "/api/sweep/run?batch=6", "schedule": "50 21 * * *" }
   ]
 }

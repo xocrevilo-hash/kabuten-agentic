@@ -243,3 +243,19 @@ export async function runSweep(companyId?: string): Promise<SweepLog[]> {
 
   return results;
 }
+
+/**
+ * Run sweeps for a specific batch of company IDs.
+ * Used by staggered cron jobs — each batch runs ~4 companies within
+ * the 5-minute serverless function timeout.
+ */
+export async function runSweepBatch(companyIds: string[]): Promise<SweepLog[]> {
+  const results: SweepLog[] = [];
+
+  for (const id of companyIds) {
+    const result = await sweepCompany(id);
+    results.push(result);
+  }
+
+  return results;
+}
