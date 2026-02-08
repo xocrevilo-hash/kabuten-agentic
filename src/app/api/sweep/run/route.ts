@@ -1,34 +1,40 @@
 import { NextResponse } from "next/server";
 import { runSweep, runSweepBatch } from "@/lib/sweep/executor";
+import { getCompanies } from "@/lib/db";
 
 export const maxDuration = 300; // 5 minutes per batch
 
+const BATCH_SIZE = 8; // Max companies per batch (~30s each = ~4 min)
+
 /**
- * Batch definitions — 23 companies split into 6 batches of ~4 each.
- * Cron schedule: every 10 mins from 21:00–21:50 UTC (6:00–6:50 AM JST).
+ * Dynamic batching — companies are loaded from the DB, sorted by ID,
+ * and sliced into groups of BATCH_SIZE. No hardcoded company lists.
  *
- * Batch 1 (21:00): Accton, Advantest, Delta, Disco
- * Batch 2 (21:10): Eoptolink, Fabrinet, GDS, Hanwha
- * Batch 3 (21:20): Hitachi, Hon Hai, Isu Petasys, Lasertec
- * Batch 4 (21:30): Lite-on, Mediatek, Nanya, Panasonic
- * Batch 5 (21:40): Rorze, Samsung, Screen, SK Hynix
- * Batch 6 (21:50): Tokyo Electron, TSMC, Zhongji Innolight
+ * Cron triggers ?batch=1, ?batch=2, ... etc.
+ * Each batch sweeps up to 8 companies within the 5-min timeout.
+ *
+ * 200 companies = 25 batches × 10 min spacing = 6:00–10:00 AM JST
  */
-const BATCHES: Record<string, string[]> = {
-  "1": ["2345", "6857", "2308", "6146"],
-  "2": ["300502", "FN", "9698", "012450"],
-  "3": ["6501", "2317", "007660", "6920"],
-  "4": ["2301", "2454", "2408", "6752"],
-  "5": ["6323", "005930", "7735", "000660"],
-  "6": ["8035", "2330", "300308"],
-};
+async function getCompanyBatch(batchNum: number): Promise<{ ids: string[]; totalBatches: number; totalCompanies: number }> {
+  const companies = await getCompanies();
+  // Sort deterministically by ID so batches are stable
+  const sorted = companies.sort((a, b) => a.id.localeCompare(b.id));
+  const totalCompanies = sorted.length;
+  const totalBatches = Math.ceil(totalCompanies / BATCH_SIZE);
+
+  const start = (batchNum - 1) * BATCH_SIZE;
+  const end = Math.min(start + BATCH_SIZE, totalCompanies);
+  const ids = sorted.slice(start, end).map((c) => c.id);
+
+  return { ids, totalBatches, totalCompanies };
+}
 
 /**
  * POST /api/sweep/run
  * Triggers a sweep. Supports three modes:
- *   - ?batch=N       — run a specific batch (used by cron)
+ *   - ?batch=N       — run batch N from DB (used by cron)
  *   - ?companyId=X   — run a single company (used by manual sweep button)
- *   - no params      — run all companies sequentially (legacy, may timeout)
+ *   - no params      — run all companies sequentially (will timeout at scale)
  */
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -55,20 +61,41 @@ export async function POST(request: Request) {
     }
 
     // Batch sweep (cron trigger)
-    if (batch && BATCHES[batch]) {
-      const companyIds = BATCHES[batch];
-      const results = await runSweepBatch(companyIds);
+    if (batch) {
+      const batchNum = parseInt(batch);
+      if (isNaN(batchNum) || batchNum < 1) {
+        return NextResponse.json({ error: "Invalid batch number" }, { status: 400 });
+      }
+
+      const { ids, totalBatches, totalCompanies } = await getCompanyBatch(batchNum);
+
+      if (ids.length === 0) {
+        return NextResponse.json({
+          success: true,
+          timestamp: new Date().toISOString(),
+          mode: "batch",
+          batch: batchNum,
+          totalBatches,
+          totalCompanies,
+          message: `Batch ${batchNum} is empty — only ${totalBatches} batches needed for ${totalCompanies} companies`,
+          results: [],
+        });
+      }
+
+      const results = await runSweepBatch(ids);
       return NextResponse.json({
         success: true,
         timestamp: new Date().toISOString(),
         mode: "batch",
-        batch: parseInt(batch),
-        companiesInBatch: companyIds.length,
+        batch: batchNum,
+        totalBatches,
+        totalCompanies,
+        batchSize: ids.length,
         results,
       });
     }
 
-    // No params — sweep all (may timeout with 23 companies)
+    // No params — sweep all (will timeout at scale, use batches instead)
     const results = await runSweep();
     return NextResponse.json({
       success: true,

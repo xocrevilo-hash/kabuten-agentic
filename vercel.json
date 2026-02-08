@@ -1,10 +1,29 @@
 {
   "crons": [
-    { "path": "/api/sweep/run?batch=1", "schedule": "0 21 * * *" },
-    { "path": "/api/sweep/run?batch=2", "schedule": "10 21 * * *" },
-    { "path": "/api/sweep/run?batch=3", "schedule": "20 21 * * *" },
-    { "path": "/api/sweep/run?batch=4", "schedule": "30 21 * * *" },
-    { "path": "/api/sweep/run?batch=5", "schedule": "40 21 * * *" },
-    { "path": "/api/sweep/run?batch=6", "schedule": "50 21 * * *" }
+    { "path": "/api/sweep/run?batch=1",  "schedule": "0 21 * * *" },
+    { "path": "/api/sweep/run?batch=2",  "schedule": "10 21 * * *" },
+    { "path": "/api/sweep/run?batch=3",  "schedule": "20 21 * * *" },
+    { "path": "/api/sweep/run?batch=4",  "schedule": "30 21 * * *" },
+    { "path": "/api/sweep/run?batch=5",  "schedule": "40 21 * * *" },
+    { "path": "/api/sweep/run?batch=6",  "schedule": "50 21 * * *" },
+    { "path": "/api/sweep/run?batch=7",  "schedule": "0 22 * * *" },
+    { "path": "/api/sweep/run?batch=8",  "schedule": "10 22 * * *" },
+    { "path": "/api/sweep/run?batch=9",  "schedule": "20 22 * * *" },
+    { "path": "/api/sweep/run?batch=10", "schedule": "30 22 * * *" },
+    { "path": "/api/sweep/run?batch=11", "schedule": "40 22 * * *" },
+    { "path": "/api/sweep/run?batch=12", "schedule": "50 22 * * *" },
+    { "path": "/api/sweep/run?batch=13", "schedule": "0 23 * * *" },
+    { "path": "/api/sweep/run?batch=14", "schedule": "10 23 * * *" },
+    { "path": "/api/sweep/run?batch=15", "schedule": "20 23 * * *" },
+    { "path": "/api/sweep/run?batch=16", "schedule": "30 23 * * *" },
+    { "path": "/api/sweep/run?batch=17", "schedule": "40 23 * * *" },
+    { "path": "/api/sweep/run?batch=18", "schedule": "50 23 * * *" },
+    { "path": "/api/sweep/run?batch=19", "schedule": "0 0 * * *" },
+    { "path": "/api/sweep/run?batch=20", "schedule": "10 0 * * *" },
+    { "path": "/api/sweep/run?batch=21", "schedule": "20 0 * * *" },
+    { "path": "/api/sweep/run?batch=22", "schedule": "30 0 * * *" },
+    { "path": "/api/sweep/run?batch=23", "schedule": "40 0 * * *" },
+    { "path": "/api/sweep/run?batch=24", "schedule": "50 0 * * *" },
+    { "path": "/api/sweep/run?batch=25", "schedule": "0 1 * * *" }
   ]
 }
