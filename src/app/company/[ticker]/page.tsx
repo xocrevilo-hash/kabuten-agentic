@@ -21,7 +21,8 @@ export default async function CompanyPage({
     notFound();
   }
 
-  const actionLog = await fetchActionLog(ticker);
+  // Fetch full audit trail for this company (all severities, higher limit)
+  const actionLog = await fetchActionLog(ticker, 100);
 
   const profile = company.profile_json;
   const criteria = company.sweep_criteria_json;

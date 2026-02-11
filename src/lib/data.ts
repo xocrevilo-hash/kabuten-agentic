@@ -114,13 +114,13 @@ export async function fetchCompany(id: string): Promise<Company | null> {
   }
 }
 
-export async function fetchActionLog(companyId?: string): Promise<ActionLogEntry[]> {
+export async function fetchActionLog(companyId?: string, limit = 20): Promise<ActionLogEntry[]> {
   if (!process.env.DATABASE_URL) {
     return getSeedActionLog(companyId);
   }
   try {
     const { getActionLog } = await import("@/lib/db");
-    const rows = await getActionLog(companyId);
+    const rows = await getActionLog(companyId, limit);
     if (rows.length === 0) return getSeedActionLog(companyId);
     return rows as unknown as ActionLogEntry[];
   } catch {

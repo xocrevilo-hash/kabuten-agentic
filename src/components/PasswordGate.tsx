@@ -65,14 +65,14 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
     return null;
   }
 
-  // Authenticated — render content
+  // Authenticated — render content with wallpaper
   if (isAuthenticated) {
-    return <>{children}</>;
+    return <div className="min-h-screen kanji-wallpaper">{children}</div>;
   }
 
   // Password gate
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] kanji-wallpaper">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)]">
       <div className="flex flex-col items-center gap-8">
         <h1
           className="kabuten-logo font-bold tracking-[0.15em] leading-none select-none text-[72px] sm:text-[90px]"

@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${orbitron.variable} font-sans antialiased bg-white text-gray-900 kanji-wallpaper`}
+        className={`${inter.variable} ${orbitron.variable} font-sans antialiased bg-white text-gray-900`}
       >
         <PasswordGate>
           <NavToolbar />
