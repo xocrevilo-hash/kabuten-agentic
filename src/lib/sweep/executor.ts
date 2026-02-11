@@ -1,4 +1,4 @@
-import { getCompanies, getCompany, insertActionLog, updateCompanyAfterSweep, insertSweepData, getLatestSweepData } from "@/lib/db";
+import { getCompanies, getCompany, insertActionLog, updateCompanyAfterSweep, insertSweepData, getLatestSweepData, updateCompanyMarketCap } from "@/lib/db";
 import { analyzeSweep, deepAnalysis, type SweepResult } from "@/lib/claude";
 import { fetchIRPage } from "./fetchers/ir-page";
 import { fetchNews } from "./fetchers/news";
@@ -6,6 +6,7 @@ import { fetchTwitter } from "./fetchers/twitter";
 import { fetchPrice } from "./fetchers/price";
 import { fetchIndustry } from "./fetchers/industry";
 import { fetchEdinet } from "./fetchers/edinet";
+import { fetchReddit } from "./fetchers/reddit";
 import { createHash } from "crypto";
 
 export interface SweepLog {
@@ -40,13 +41,14 @@ async function fetchAllSources(
     twitter: () => fetchTwitter(companyName, ticker),
     tradingview: () => fetchPrice(companyName, ticker),
     industry: () => fetchIndustry(companyName, sector),
+    reddit: () => fetchReddit(companyName, ticker),
   };
 
   const results: { source: string; content: string; isNew: boolean }[] = [];
 
   // Separate into direct fetchers (no Claude API) and web search fetchers (use Claude API)
   const directSources = ["company_ir", "edinet"];
-  const webSearchSources = ["reuters_nikkei", "twitter", "tradingview", "industry"];
+  const webSearchSources = ["reuters_nikkei", "twitter", "tradingview", "industry", "reddit"];
 
   async function fetchAndStore(source: string) {
     try {
@@ -129,6 +131,25 @@ async function sweepCompany(companyId: string): Promise<SweepLog> {
       company.sector,
       criteria.sources
     );
+
+    // Try to extract and update market cap from price data
+    const priceData = fetchedData.find((d) => d.source === "tradingview");
+    if (priceData?.content) {
+      try {
+        // Look for market cap patterns in the price data content
+        const mcMatch = priceData.content.match(/market\s*cap[:\s]*\$?([\d,.]+)\s*(trillion|billion|T|B)/i);
+        if (mcMatch) {
+          let mcValue = parseFloat(mcMatch[1].replace(/,/g, ""));
+          const unit = mcMatch[2].toLowerCase();
+          if (unit === "trillion" || unit === "t") mcValue *= 1000;
+          if (mcValue > 0 && mcValue < 100000) {
+            await updateCompanyMarketCap(companyId, Math.round(mcValue));
+          }
+        }
+      } catch {
+        // Non-critical — don't fail sweep if market cap extraction fails
+      }
+    }
 
     // Only send new data to Claude for analysis
     const newData = fetchedData

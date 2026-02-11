@@ -13,7 +13,7 @@ const BATCH_SIZE = 8; // Max companies per batch (~30s each = ~4 min)
  * Cron triggers ?batch=1, ?batch=2, ... etc.
  * Each batch sweeps up to 8 companies within the 5-min timeout.
  *
- * 200 companies = 25 batches × 10 min spacing = 6:00–10:00 AM JST
+ * 230 companies = 29 batches × 10 min spacing = 2:00–6:50 AM JST
  */
 async function getCompanyBatch(batchNum: number): Promise<{ ids: string[]; totalBatches: number; totalCompanies: number }> {
   const companies = await getCompanies();

@@ -1,9 +1,13 @@
 interface EarningsRow {
   period: string;
   revenue: string;
+  revenueGrowth?: string;
   operatingProfit: string;
+  opMargin?: string;
   netProfit: string;
+  npMargin?: string;
   eps: string;
+  epsGrowth?: string;
   isEstimate?: boolean;
 }
 
@@ -11,12 +15,14 @@ interface EarningsModelProps {
   rows: EarningsRow[];
   segments?: { name: string; revenue: string; share: string }[];
   currency?: string;
+  source?: string;
 }
 
 export default function EarningsModel({
   rows,
   segments,
   currency = "JPY",
+  source,
 }: EarningsModelProps) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
@@ -29,20 +35,32 @@ export default function EarningsModel({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500">
+              <th className="text-left py-2 pr-3 text-xs font-medium text-gray-500 whitespace-nowrap">
                 Period
               </th>
-              <th className="text-right py-2 px-3 text-xs font-medium text-gray-500">
-                Revenue ({currency})
+              <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 whitespace-nowrap">
+                Revenue
               </th>
-              <th className="text-right py-2 px-3 text-xs font-medium text-gray-500">
+              <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 whitespace-nowrap">
+                Rev Gr.
+              </th>
+              <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 whitespace-nowrap">
                 Op. Profit
               </th>
-              <th className="text-right py-2 px-3 text-xs font-medium text-gray-500">
+              <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 whitespace-nowrap">
+                Op. Mgn
+              </th>
+              <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 whitespace-nowrap">
                 Net Profit
               </th>
-              <th className="text-right py-2 pl-3 text-xs font-medium text-gray-500">
+              <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 whitespace-nowrap">
+                NP Mgn
+              </th>
+              <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 whitespace-nowrap">
                 EPS
+              </th>
+              <th className="text-right py-2 pl-2 text-xs font-medium text-gray-500 whitespace-nowrap">
+                EPS Gr.
               </th>
             </tr>
           </thead>
@@ -54,7 +72,7 @@ export default function EarningsModel({
                   row.isEstimate ? "bg-blue-50/30" : ""
                 }`}
               >
-                <td className="py-2 pr-4 text-gray-700 font-medium whitespace-nowrap">
+                <td className="py-2 pr-3 text-gray-700 font-medium whitespace-nowrap">
                   {row.period}
                   {row.isEstimate && (
                     <span className="ml-1.5 text-[10px] text-blue-500 font-normal">
@@ -62,23 +80,44 @@ export default function EarningsModel({
                     </span>
                   )}
                 </td>
-                <td className="py-2 px-3 text-right text-gray-700 font-mono text-xs">
+                <td className="py-2 px-2 text-right text-gray-700 font-mono text-xs whitespace-nowrap">
                   {row.revenue}
                 </td>
-                <td className="py-2 px-3 text-right text-gray-700 font-mono text-xs">
+                <td className={`py-2 px-2 text-right font-mono text-xs whitespace-nowrap ${
+                  row.revenueGrowth && row.revenueGrowth.startsWith("-") ? "text-red-500" : "text-green-600"
+                }`}>
+                  {row.revenueGrowth || "—"}
+                </td>
+                <td className="py-2 px-2 text-right text-gray-700 font-mono text-xs whitespace-nowrap">
                   {row.operatingProfit}
                 </td>
-                <td className="py-2 px-3 text-right text-gray-700 font-mono text-xs">
+                <td className="py-2 px-2 text-right text-gray-500 font-mono text-xs whitespace-nowrap">
+                  {row.opMargin || "—"}
+                </td>
+                <td className="py-2 px-2 text-right text-gray-700 font-mono text-xs whitespace-nowrap">
                   {row.netProfit}
                 </td>
-                <td className="py-2 pl-3 text-right text-gray-700 font-mono text-xs">
+                <td className="py-2 px-2 text-right text-gray-500 font-mono text-xs whitespace-nowrap">
+                  {row.npMargin || "—"}
+                </td>
+                <td className="py-2 px-2 text-right text-gray-700 font-mono text-xs whitespace-nowrap">
                   {row.eps}
+                </td>
+                <td className={`py-2 pl-2 text-right font-mono text-xs whitespace-nowrap ${
+                  row.epsGrowth && row.epsGrowth.startsWith("-") ? "text-red-500" : "text-green-600"
+                }`}>
+                  {row.epsGrowth || "—"}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Source attribution */}
+      {source && (
+        <p className="mt-3 text-xs text-gray-400">Source: {source}</p>
+      )}
 
       {/* Segments breakdown */}
       {segments && segments.length > 0 && (

@@ -1,4 +1,7 @@
-import seedData from "../../data/seed.json";
+import seedDataRaw from "../../data/seed.json";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const seedData = seedDataRaw as any;
 
 // Types matching our database schema
 export interface EarningsRow {
@@ -34,6 +37,11 @@ export interface Company {
   name: string;
   name_jp: string;
   ticker_full: string;
+  exchange: string;
+  country: string;
+  classification: string;
+  market_cap_usd: number | null;
+  benchmark_index: string;
   sector: string;
   profile_json: {
     overview: string;
@@ -126,21 +134,26 @@ function getSeedCompanies(): Company[] {
 }
 
 function getSeedCompany(id: string): Company | null {
-  const c = seedData.companies.find((c) => c.id === id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const c = seedData.companies.find((c: any) => c.id === id);
   return c ? toCompany(c) : null;
 }
 
 function getSeedActionLog(companyId?: string): ActionLogEntry[] {
   const companyMap = Object.fromEntries(
-    seedData.companies.map((c) => [c.id, c.name])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    seedData.companies.map((c: any) => [c.id, c.name])
   );
-  let logs = seedData.action_log;
+  let logs = seedData.action_log || [];
   if (companyId) {
-    logs = logs.filter((l) => l.company_id === companyId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    logs = logs.filter((l: any) => l.company_id === companyId);
   }
   return logs
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    .map((l, i) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((l: any, i: number) => ({
       id: i + 1,
       company_id: l.company_id,
       company_name: companyMap[l.company_id] || l.company_id,
@@ -152,12 +165,18 @@ function getSeedActionLog(companyId?: string): ActionLogEntry[] {
     }));
 }
 
-function toCompany(c: (typeof seedData.companies)[number]): Company {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toCompany(c: any): Company {
   return {
     id: c.id,
     name: c.name,
     name_jp: c.name_jp,
     ticker_full: c.ticker_full,
+    exchange: c.exchange || "",
+    country: c.country || "",
+    classification: c.classification || "",
+    market_cap_usd: c.market_cap_usd || null,
+    benchmark_index: c.benchmark_index || "",
     sector: c.sector,
     profile_json: c.profile_json,
     sweep_criteria_json: c.sweep_criteria_json,

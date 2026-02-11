@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 interface ManualSweepButtonProps {
   companyId: string;
   companyName: string;
+  embedded?: boolean;
 }
 
 type SweepStatus = "idle" | "running" | "success" | "error";
@@ -13,6 +14,7 @@ type SweepStatus = "idle" | "running" | "success" | "error";
 export default function ManualSweepButton({
   companyId,
   companyName,
+  embedded = false,
 }: ManualSweepButtonProps) {
   const [status, setStatus] = useState<SweepStatus>("idle");
   const [result, setResult] = useState<{
@@ -42,7 +44,6 @@ export default function ManualSweepButton({
             summary: sweepResult.summary,
             durationMs: sweepResult.durationMs,
           });
-          // Refresh the page data
           router.refresh();
         } else {
           setStatus("error");
@@ -66,17 +67,25 @@ export default function ManualSweepButton({
     MATERIAL: "text-red-600",
   };
 
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-          Manual Sweep
-        </h2>
-      </div>
+  const Wrapper = embedded ? "div" : ({ children }: { children: React.ReactNode }) => (
+    <div className="rounded-xl border border-gray-200 bg-white p-6">{children}</div>
+  );
 
-      <p className="text-xs text-gray-500 mb-4">
-        Run an ad-hoc sweep for {companyName} outside the daily cron schedule.
-      </p>
+  return (
+    <Wrapper>
+      {!embedded && (
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            Manual Sweep
+          </h2>
+        </div>
+      )}
+
+      {!embedded && (
+        <p className="text-xs text-gray-500 mb-4">
+          Run an ad-hoc sweep for {companyName} outside the daily cron schedule.
+        </p>
+      )}
 
       <button
         onClick={runSweep}
@@ -107,7 +116,7 @@ export default function ManualSweepButton({
 
       {/* Result display */}
       {result && status !== "running" && (
-        <div className={`mt-4 rounded-lg p-3 text-sm ${
+        <div className={`mt-3 rounded-lg p-3 text-sm ${
           status === "error" ? "bg-red-50" : "bg-gray-50"
         }`}>
           {status === "success" && result.classification && (
@@ -136,6 +145,6 @@ export default function ManualSweepButton({
           )}
         </div>
       )}
-    </div>
+    </Wrapper>
   );
 }

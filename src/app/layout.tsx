@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Orbitron } from "next/font/google";
+import PasswordGate from "@/components/PasswordGate";
+import NavToolbar from "@/components/NavToolbar";
 import "./globals.css";
 
 const inter = Inter({
@@ -16,7 +18,7 @@ const orbitron = Orbitron({
 export const metadata: Metadata = {
   title: "Kabuten — Agentic Stock Research",
   description:
-    "AI-powered Japanese stock research platform with dedicated analyst agents",
+    "AI-powered stock research platform with dedicated analyst agents",
 };
 
 export default function RootLayout({
@@ -27,9 +29,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${orbitron.variable} font-sans antialiased bg-white text-gray-900`}
+        className={`${inter.variable} ${orbitron.variable} font-sans antialiased bg-white text-gray-900 kanji-wallpaper`}
       >
-        {children}
+        <PasswordGate>
+          <NavToolbar />
+          {children}
+        </PasswordGate>
       </body>
     </html>
   );

@@ -16,9 +16,20 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
+  min-height: 100vh;
 }
 
-/* Kabuten Logo Metallic Gradient */
+/* Kanji Wallpaper — 株天 repeating light grey lines (fresh start)
+   Uses a long continuous 株天株天株天... string as the repeating unit
+   so the pattern is seamless with no 株株 doubling at tile boundaries.
+   The SVG tile is wide enough that the seam is invisible. */
+.kanji-wallpaper {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='960' height='44'%3E%3Ctext x='0' y='32' font-family='serif' font-size='28' font-weight='300' fill='rgba(0,0,0,0.12)' letter-spacing='0.05em'%3E%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%E6%A0%AA%E5%A4%A9%3C/text%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-position: 0 0;
+}
+
+/* Kabuten Logo Metallic Gradient — Enhanced 3D */
 @keyframes metallicFlow {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -26,29 +37,94 @@ body {
 }
 
 @keyframes organicGlow {
-  0% { filter: drop-shadow(0 0 8px rgba(201, 168, 76, 0.3)); }
-  50% { filter: drop-shadow(0 0 16px rgba(201, 168, 76, 0.6)); }
-  100% { filter: drop-shadow(0 0 8px rgba(201, 168, 76, 0.3)); }
+  0% { filter: drop-shadow(0 0 10px rgba(201, 168, 76, 0.4)); }
+  50% { filter: drop-shadow(0 0 24px rgba(201, 168, 76, 0.7)); }
+  100% { filter: drop-shadow(0 0 10px rgba(201, 168, 76, 0.4)); }
 }
 
 .kabuten-logo {
   background: linear-gradient(
     135deg,
     #0a1628 0%,
-    #1a2a4a 12%,
-    #2a3f6e 24%,
-    #4a6fa5 36%,
-    #7a9ec7 44%,
-    #b0c4de 50%,
-    #c0c8d4 56%,
-    #c9a84c 68%,
-    #b8943f 80%,
-    #a07830 90%,
+    #1a2a4a 10%,
+    #2a3f6e 20%,
+    #4a6fa5 30%,
+    #7a9ec7 38%,
+    #b0c4de 44%,
+    #d4dce8 48%,
+    #c9a84c 55%,
+    #dfc06a 62%,
+    #c9a84c 70%,
+    #b8943f 78%,
+    #a07830 86%,
+    #1a2a4a 94%,
     #0a1628 100%
   );
-  background-size: 200% 200%;
+  background-size: 300% 300%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: metallicFlow 6s ease-in-out infinite, organicGlow 4s ease-in-out infinite;
+  animation: metallicFlow 8s ease-in-out infinite, organicGlow 4s ease-in-out infinite;
+  text-shadow: none;
+  position: relative;
+}
+
+/* 3D depth shadow layers behind the logo */
+.kabuten-logo-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.kabuten-logo-wrapper::before {
+  content: "KABUTEN";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-family: var(--font-orbitron);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: rgba(10, 22, 40, 0.15);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.kabuten-logo-wrapper::after {
+  content: "KABUTEN";
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-family: var(--font-orbitron);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: rgba(10, 22, 40, 0.08);
+  z-index: -2;
+  pointer-events: none;
+}
+
+.kabuten-logo-wrapper.hero::before,
+.kabuten-logo-wrapper.hero::after {
+  font-size: 90px;
+}
+
+.kabuten-logo-wrapper.navbar::before,
+.kabuten-logo-wrapper.navbar::after {
+  font-size: 56px;
+}
+
+/* Radial glow behind logo */
+.logo-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120%;
+  height: 200%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(201, 168, 76, 0.06) 0%,
+    rgba(176, 196, 222, 0.04) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: -3;
 }

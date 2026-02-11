@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 interface ActionLogEntry {
   id: number;
@@ -91,10 +92,14 @@ function LogEntry({
             <span className="text-xs text-gray-400 font-mono">
               {formatTimestamp(entry.timestamp)}
             </span>
-            {showCompany && (
-              <span className="text-xs font-medium text-gray-600">
+            {showCompany && entry.company_id && (
+              <Link
+                href={`/company/${entry.company_id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+              >
                 {entry.company_name}
-              </span>
+              </Link>
             )}
             <SeverityLabel severity={entry.severity} />
           </div>
