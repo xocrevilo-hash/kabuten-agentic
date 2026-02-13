@@ -47,12 +47,15 @@ export default async function CompanyPage({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Investment View */}
           <InvestmentView
-            investmentView={company.investment_view}
-            conviction={company.conviction}
-            thesis={profile.thesis}
-            keyAssumptions={profile.key_assumptions}
-            riskFactors={profile.risk_factors}
-            lastUpdated={company.updated_at}
+            investmentView={profile.investment_view_detail?.stance || company.investment_view}
+            conviction={profile.investment_view_detail?.conviction || company.conviction}
+            thesis={profile.investment_view_detail?.thesis_summary || profile.thesis}
+            valuationAssessment={profile.investment_view_detail?.valuation_assessment}
+            keyDrivers={profile.investment_view_detail?.key_drivers || profile.key_assumptions?.slice(0, 3)}
+            keyRisks={profile.investment_view_detail?.key_risks || profile.risk_factors?.slice(0, 3)}
+            convictionRationale={profile.investment_view_detail?.conviction_rationale}
+            lastUpdated={profile.investment_view_detail?.last_updated || company.updated_at}
+            lastUpdatedReason={profile.investment_view_detail?.last_updated_reason}
           />
 
           {/* Right: Analyst Agent Log */}

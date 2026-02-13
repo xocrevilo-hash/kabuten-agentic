@@ -162,6 +162,38 @@ export async function initializeDatabase() {
     )
   `;
 
+  // Sector Investment Views table
+  await sql`
+    CREATE TABLE IF NOT EXISTS sector_views (
+      id SERIAL PRIMARY KEY,
+      sector_name TEXT NOT NULL UNIQUE,
+      stance TEXT DEFAULT 'neutral',
+      conviction TEXT DEFAULT 'medium',
+      thesis_summary TEXT,
+      valuation_assessment JSONB DEFAULT '[]',
+      conviction_rationale JSONB DEFAULT '[]',
+      key_drivers JSONB DEFAULT '[]',
+      key_risks JSONB DEFAULT '[]',
+      last_updated TIMESTAMPTZ DEFAULT NOW(),
+      last_updated_reason TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
+  // Sector Agent Log table
+  await sql`
+    CREATE TABLE IF NOT EXISTS sector_log (
+      id SERIAL PRIMARY KEY,
+      sector_name TEXT NOT NULL,
+      log_date DATE DEFAULT CURRENT_DATE,
+      classification TEXT NOT NULL DEFAULT 'NO_CHANGE',
+      summary TEXT NOT NULL,
+      related_companies JSONB DEFAULT '[]',
+      detail_json JSONB,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
   return { success: true };
 }
 
@@ -658,5 +690,107 @@ export async function insertAskKabutenLog(entry: {
   await sql`
     INSERT INTO ask_kabuten_log (query, answer, source)
     VALUES (${entry.query}, ${entry.answer}, ${entry.source})
+  `;
+}
+
+// ========== Sector DB functions ==========
+
+export async function getSectorView(sectorName: string) {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM sector_views WHERE sector_name = ${sectorName}
+  `;
+  return rows[0] || null;
+}
+
+export async function getAllSectorViews() {
+  const sql = getDb();
+  return sql`SELECT * FROM sector_views ORDER BY sector_name`;
+}
+
+export async function upsertSectorView(entry: {
+  sectorName: string;
+  stance: string;
+  conviction: string;
+  thesisSummary: string;
+  valuationAssessment: string[];
+  convictionRationale: string[];
+  keyDrivers: string[];
+  keyRisks: string[];
+  lastUpdatedReason: string;
+}) {
+  const sql = getDb();
+  await sql`
+    INSERT INTO sector_views (
+      sector_name, stance, conviction, thesis_summary,
+      valuation_assessment, conviction_rationale, key_drivers, key_risks,
+      last_updated, last_updated_reason
+    )
+    VALUES (
+      ${entry.sectorName},
+      ${entry.stance},
+      ${entry.conviction},
+      ${entry.thesisSummary},
+      ${JSON.stringify(entry.valuationAssessment)},
+      ${JSON.stringify(entry.convictionRationale)},
+      ${JSON.stringify(entry.keyDrivers)},
+      ${JSON.stringify(entry.keyRisks)},
+      NOW(),
+      ${entry.lastUpdatedReason}
+    )
+    ON CONFLICT (sector_name) DO UPDATE SET
+      stance = EXCLUDED.stance,
+      conviction = EXCLUDED.conviction,
+      thesis_summary = EXCLUDED.thesis_summary,
+      valuation_assessment = EXCLUDED.valuation_assessment,
+      conviction_rationale = EXCLUDED.conviction_rationale,
+      key_drivers = EXCLUDED.key_drivers,
+      key_risks = EXCLUDED.key_risks,
+      last_updated = NOW(),
+      last_updated_reason = EXCLUDED.last_updated_reason
+  `;
+}
+
+export async function getSectorLog(sectorName: string, limit = 50) {
+  const sql = getDb();
+  return sql`
+    SELECT * FROM sector_log
+    WHERE sector_name = ${sectorName}
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `;
+}
+
+export async function insertSectorLog(entry: {
+  sectorName: string;
+  classification: string;
+  summary: string;
+  relatedCompanies: string[];
+  detailJson: Record<string, unknown> | null;
+}) {
+  const sql = getDb();
+  await sql`
+    INSERT INTO sector_log (sector_name, log_date, classification, summary, related_companies, detail_json)
+    VALUES (
+      ${entry.sectorName},
+      CURRENT_DATE,
+      ${entry.classification},
+      ${entry.summary},
+      ${JSON.stringify(entry.relatedCompanies)},
+      ${entry.detailJson ? JSON.stringify(entry.detailJson) : null}
+    )
+  `;
+}
+
+export async function getTodaySweepResultsForCompanies(companyIds: string[]) {
+  const sql = getDb();
+  if (companyIds.length === 0) return [];
+  return sql`
+    SELECT al.*, c.name as company_name
+    FROM action_log al
+    JOIN companies c ON al.company_id = c.id
+    WHERE al.company_id = ANY(${companyIds})
+    AND al.timestamp::date = CURRENT_DATE
+    ORDER BY al.timestamp DESC
   `;
 }

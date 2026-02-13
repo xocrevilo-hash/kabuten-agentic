@@ -48,6 +48,18 @@ export interface Company {
     thesis: string;
     key_assumptions: string[];
     risk_factors: string[];
+    investment_view_detail?: {
+      stance: string;
+      conviction: string;
+      thesis_summary: string;
+      valuation_assessment: string[];
+      conviction_rationale: string[];
+      key_drivers: string[];
+      key_risks: string[];
+      catalysts?: string[];
+      last_updated: string;
+      last_updated_reason: string;
+    };
     earnings?: EarningsRow[];
     segments?: Segment[];
     valuation_metrics?: ValuationMetric[];

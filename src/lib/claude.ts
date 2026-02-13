@@ -4,6 +4,19 @@ const anthropic = new Anthropic();
 
 export type SweepClassification = "NO_CHANGE" | "NOTABLE" | "MATERIAL";
 
+export interface InvestmentViewDetail {
+  stance: string;
+  conviction: string;
+  thesis_summary: string;
+  valuation_assessment: string[];
+  conviction_rationale: string[];
+  key_drivers: string[];
+  key_risks: string[];
+  catalysts?: string[];
+  last_updated: string;
+  last_updated_reason: string;
+}
+
 export interface SweepResult {
   classification: SweepClassification;
   summary: string;
@@ -99,6 +112,14 @@ INSTRUCTIONS:
 4. If NOTABLE or MATERIAL, provide a structured brief
 5. If MATERIAL, recommend specific updates to the investment view or model
 
+INVESTMENT VIEW FORMAT REQUIREMENTS (strictly enforced):
+When suggesting profile updates (for MATERIAL findings), the suggested_profile_updates MUST include an investment_view_detail object:
+- thesis_summary: MAX 100 WORDS (concise investment case)
+- valuation_assessment: array of MAX 4 bullet point strings (current valuation context)
+- key_drivers: array of EXACTLY 3 bullet point strings (positive catalysts)
+- key_risks: array of EXACTLY 3 bullet point strings (downside risks)
+- conviction_rationale: array of MAX 4 bullet point strings (why conviction is at this level)
+
 Respond ONLY with valid JSON in the following format (no markdown, no code fences):
 {
   "classification": "NO_CHANGE" | "NOTABLE" | "MATERIAL",
@@ -115,7 +136,7 @@ Respond ONLY with valid JSON in the following format (no markdown, no code fence
 
 For NO_CHANGE, set summary to "Sweep completed: no change to Investment View" and detail to null.
 For NOTABLE, fill in detail but set suggested_profile_updates to null.
-For MATERIAL, fill in both detail and suggested_profile_updates with recommended changes.`;
+For MATERIAL, fill in both detail and suggested_profile_updates including an investment_view_detail object with the fields above.`;
 
   const userContent = newData.length > 0
     ? `NEW INFORMATION FROM TODAY'S SWEEP:\n\n${newData
@@ -177,7 +198,19 @@ export async function deepAnalysis(opts: {
   const response = await anthropic.messages.create({
     model: "claude-opus-4-6",
     max_tokens: 8192,
-    system: `You are a senior equity research analyst conducting deep analysis on ${companyName} (${ticker}). A material finding has been detected in the daily sweep. Your task is to analyze the finding in depth and recommend specific updates to the company profile.`,
+    system: `You are a senior equity research analyst conducting deep analysis on ${companyName} (${ticker}). A material finding has been detected in the daily sweep. Your task is to analyze the finding in depth and recommend specific updates to the company profile.
+
+INVESTMENT VIEW FORMAT REQUIREMENTS (strictly enforced):
+The updatedProfile MUST include an investment_view_detail object with:
+- stance: "bullish" | "neutral" | "bearish"
+- conviction: "high" | "medium" | "low"
+- thesis_summary: MAX 100 WORDS (concise investment case)
+- valuation_assessment: array of MAX 4 bullet point strings
+- key_drivers: array of EXACTLY 3 bullet point strings
+- key_risks: array of EXACTLY 3 bullet point strings
+- conviction_rationale: array of MAX 4 bullet point strings
+- last_updated: ISO timestamp
+- last_updated_reason: what triggered the update`,
     messages: [
       {
         role: "user",
@@ -188,7 +221,7 @@ CURRENT FULL PROFILE:
 ${JSON.stringify(fullProfile, null, 2)}
 
 Analyze this material finding and provide:
-1. An updated company profile JSON (same structure as current, with modifications)
+1. An updated company profile JSON (same structure as current, with modifications) — MUST include investment_view_detail
 2. Detailed analysis notes explaining your reasoning
 
 Respond ONLY with valid JSON (no markdown, no code fences):
@@ -219,6 +252,222 @@ Respond ONLY with valid JSON (no markdown, no code fences):
     return {
       updatedProfile: fullProfile,
       analysisNotes: "Deep analysis parsing failed. Profile unchanged.",
+    };
+  }
+}
+
+/**
+ * Generate a short-format Investment View for a company.
+ * Used to re-generate all existing views to comply with new format limits.
+ */
+export async function generateInvestmentView(opts: {
+  companyName: string;
+  ticker: string;
+  sector: string;
+  overview: string;
+  currentThesis: string;
+  currentView: string;
+  currentConviction: string;
+  keyAssumptions: string[];
+  riskFactors: string[];
+}): Promise<InvestmentViewDetail> {
+  const { companyName, ticker, sector, overview, currentThesis, currentView, currentConviction, keyAssumptions, riskFactors } = opts;
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-5-20250929",
+    max_tokens: 2048,
+    system: `You are a senior equity research analyst. Generate a concise Investment View for ${companyName} (${ticker}) in the ${sector} sector.
+
+STRICT FORMAT REQUIREMENTS:
+- thesis_summary: MAX 100 WORDS — concise investment case
+- valuation_assessment: array of MAX 4 short bullet strings — current valuation context
+- key_drivers: array of EXACTLY 3 short bullet strings — positive catalysts
+- key_risks: array of EXACTLY 3 short bullet strings — downside risks
+- conviction_rationale: array of MAX 4 short bullet strings — why conviction is at this level
+
+Each bullet should be one concise sentence. Do not exceed the limits.`,
+    messages: [
+      {
+        role: "user",
+        content: `COMPANY OVERVIEW:
+${overview}
+
+CURRENT STANCE: ${currentView}
+CURRENT CONVICTION: ${currentConviction}
+
+EXISTING THESIS:
+${currentThesis}
+
+EXISTING KEY ASSUMPTIONS:
+${keyAssumptions.map((a) => `- ${a}`).join("\n")}
+
+EXISTING RISK FACTORS:
+${riskFactors.map((r) => `- ${r}`).join("\n")}
+
+Generate a tightly formatted Investment View. Respond ONLY with valid JSON (no markdown):
+{
+  "stance": "${currentView}",
+  "conviction": "${currentConviction}",
+  "thesis_summary": "...",
+  "valuation_assessment": ["...", "..."],
+  "key_drivers": ["...", "...", "..."],
+  "key_risks": ["...", "...", "..."],
+  "conviction_rationale": ["...", "..."],
+  "last_updated": "${new Date().toISOString()}",
+  "last_updated_reason": "Investment View format migration"
+}`,
+      },
+    ],
+  });
+
+  const rawText = response.content
+    .filter((block) => block.type === "text")
+    .map((block) => "text" in block ? block.text : "")
+    .join("");
+
+  try {
+    return JSON.parse(rawText) as InvestmentViewDetail;
+  } catch {
+    try {
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]) as InvestmentViewDetail;
+      }
+    } catch {
+      // Fall through
+    }
+    // Return a minimal valid structure
+    return {
+      stance: opts.currentView,
+      conviction: opts.currentConviction,
+      thesis_summary: opts.currentThesis.split(" ").slice(0, 100).join(" "),
+      valuation_assessment: ["Valuation data pending"],
+      key_drivers: opts.keyAssumptions.slice(0, 3).length === 3
+        ? opts.keyAssumptions.slice(0, 3)
+        : [...opts.keyAssumptions.slice(0, 3), ...Array(3 - Math.min(opts.keyAssumptions.length, 3)).fill("To be determined")],
+      key_risks: opts.riskFactors.slice(0, 3).length === 3
+        ? opts.riskFactors.slice(0, 3)
+        : [...opts.riskFactors.slice(0, 3), ...Array(3 - Math.min(opts.riskFactors.length, 3)).fill("To be determined")],
+      conviction_rationale: ["Conviction rationale pending"],
+      last_updated: new Date().toISOString(),
+      last_updated_reason: "Investment View format migration (parse fallback)",
+    };
+  }
+}
+
+/**
+ * Synthesise a sector-level Investment View from individual company sweep results.
+ */
+export async function synthesizeSectorView(opts: {
+  sectorName: string;
+  companies: { name: string; ticker: string; stance: string; conviction: string }[];
+  currentSectorView: {
+    stance?: string;
+    conviction?: string;
+    thesis_summary?: string;
+    valuation_assessment?: string[];
+    conviction_rationale?: string[];
+  } | null;
+  todaySweepResults: { company_name: string; severity: string; summary: string }[];
+}): Promise<{
+  classification: string;
+  summary: string;
+  detail: Record<string, unknown> | null;
+  suggested_sector_view_update: InvestmentViewDetail | null;
+}> {
+  const { sectorName, companies, currentSectorView, todaySweepResults } = opts;
+
+  const companyList = companies
+    .map((c) => `${c.name} (${c.ticker}) — ${c.stance}, ${c.conviction} conviction`)
+    .join("\n");
+
+  const sweepResults = todaySweepResults.length > 0
+    ? todaySweepResults.map((r) => `${r.company_name}: [${r.severity}] ${r.summary}`).join("\n")
+    : "No sweep results available for today.";
+
+  const currentView = currentSectorView
+    ? `Stance: ${currentSectorView.stance || "neutral"} | Conviction: ${currentSectorView.conviction || "medium"}
+Thesis: ${currentSectorView.thesis_summary || "No thesis yet"}
+Valuation: ${(currentSectorView.valuation_assessment || []).join("; ")}
+Conviction Rationale: ${(currentSectorView.conviction_rationale || []).join("; ")}`
+    : "No existing sector view — this is the first assessment.";
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-5-20250929",
+    max_tokens: 4096,
+    system: `You are a senior equity research analyst covering the ${sectorName} sector.
+
+Your role is to maintain an investment view on this sector by synthesising the daily sweep results from the individual company analysts who cover each company in your group.
+
+COMPANIES IN THIS SECTOR:
+${companyList}
+
+CURRENT SECTOR INVESTMENT VIEW:
+${currentView}
+
+TODAY'S DAILY SWEEP RESULTS FROM COMPANY AGENTS:
+${sweepResults}
+
+INSTRUCTIONS:
+1. Review today's sweep results from each company agent in your sector
+2. Assess whether the aggregated picture changes the sector thesis
+3. Look for sector-wide themes: are multiple companies seeing the same trend?
+4. Classify the sector sweep as: NO_CHANGE, INCREMENTAL, or MATERIAL
+5. Apply a HIGH hurdle rate for MATERIAL — most days should be NO_CHANGE
+6. If MATERIAL, update the Sector Investment View with strict format limits
+
+INVESTMENT VIEW FORMAT REQUIREMENTS (strictly enforced):
+- thesis_summary: MAX 100 WORDS
+- valuation_assessment: array of MAX 4 bullet point strings
+- key_drivers: array of EXACTLY 3 bullet point strings
+- key_risks: array of EXACTLY 3 bullet point strings
+- conviction_rationale: array of MAX 4 bullet point strings
+
+Respond ONLY with valid JSON (no markdown, no code fences):
+{
+  "classification": "NO_CHANGE" | "INCREMENTAL" | "MATERIAL",
+  "summary": "One-line summary of sector sweep",
+  "detail": {
+    "sector_themes": "...",
+    "company_highlights": "...",
+    "valuation_context": "...",
+    "recommended_action": "..."
+  },
+  "suggested_sector_view_update": null
+}
+
+For NO_CHANGE, set detail to a brief summary object and suggested_sector_view_update to null.
+For INCREMENTAL, fill in detail but set suggested_sector_view_update to null.
+For MATERIAL, fill in both detail and suggested_sector_view_update with the full investment_view_detail structure.`,
+    messages: [
+      {
+        role: "user",
+        content: `Analyze today's sweep results for the ${sectorName} sector and provide your assessment.`,
+      },
+    ],
+  });
+
+  const rawText = response.content
+    .filter((block) => block.type === "text")
+    .map((block) => "text" in block ? block.text : "")
+    .join("");
+
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    try {
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch {
+      // Fall through
+    }
+    return {
+      classification: "NO_CHANGE",
+      summary: "Sector sweep completed: parsing error — defaulting to no change",
+      detail: null,
+      suggested_sector_view_update: null,
     };
   }
 }
