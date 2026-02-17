@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
 interface ActionLogEntry {
@@ -200,6 +200,109 @@ export default function ActionLog({ entries, title = "Analyst Agent Log", showCo
           ))
         )}
       </div>
+    </div>
+  );
+}
+
+function PageControls({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (p: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-gray-100">
+      <button
+        onClick={() => onPageChange(page - 1)}
+        disabled={page <= 1}
+        className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        Previous
+      </button>
+      <span className="text-xs text-gray-400 px-2">
+        Page {page} of {totalPages}
+      </span>
+      <button
+        onClick={() => onPageChange(page + 1)}
+        disabled={page >= totalPages}
+        className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >
+        Next
+      </button>
+    </div>
+  );
+}
+
+export function PaginatedActionLog({
+  title = "Analyst Agent Log",
+  pageSize = 50,
+  showCompany = true,
+}: {
+  title?: string;
+  pageSize?: number;
+  showCompany?: boolean;
+}) {
+  const [entries, setEntries] = useState<ActionLogEntry[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const fetchPage = useCallback(async (p: number) => {
+    setLoading(true);
+    try {
+      const offset = (p - 1) * pageSize;
+      const res = await fetch(`/api/action-log?limit=${pageSize}&offset=${offset}`);
+      const data = await res.json();
+      setEntries(data.entries || []);
+      setTotal(data.total || 0);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }, [pageSize]);
+
+  useEffect(() => {
+    fetchPage(page);
+  }, [page, fetchPage]);
+
+  const handlePageChange = (p: number) => {
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+          {title}
+        </h2>
+        {total > 0 && (
+          <span className="text-xs text-gray-400">{total} entries</span>
+        )}
+      </div>
+      <div className="divide-y divide-gray-100">
+        {loading ? (
+          <div className="px-4 py-8 text-center text-sm text-gray-400">
+            Loading...
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm text-gray-400">
+            No sweep activity yet
+          </div>
+        ) : (
+          entries.map((entry) => (
+            <LogEntry key={entry.id} entry={entry} showCompany={showCompany} />
+          ))
+        )}
+      </div>
+      {!loading && <PageControls page={page} totalPages={totalPages} onPageChange={handlePageChange} />}
     </div>
   );
 }

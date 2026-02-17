@@ -670,6 +670,34 @@ export async function getActionLog(companyId?: string, limit = 20) {
   `;
 }
 
+export async function getFilteredActionLog(opts: {
+  excludeSeverities?: string[];
+  limit?: number;
+  offset?: number;
+}) {
+  const sql = getDb();
+  const exclude = opts.excludeSeverities ?? ["no_change"];
+  const limit = opts.limit ?? 50;
+  const offset = opts.offset ?? 0;
+
+  const [rows, countResult] = await Promise.all([
+    sql`
+      SELECT al.*, c.name as company_name
+      FROM action_log al
+      JOIN companies c ON al.company_id = c.id
+      WHERE al.severity != ALL(${exclude}::text[])
+      ORDER BY al.timestamp DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `,
+    sql`
+      SELECT COUNT(*)::int as total
+      FROM action_log al
+      WHERE al.severity != ALL(${exclude}::text[])
+    `,
+  ]);
+  return { rows, total: countResult[0].total as number };
+}
+
 // ========== Ask Kabuten Log functions ==========
 
 export async function getAskKabutenLog(limit = 30) {

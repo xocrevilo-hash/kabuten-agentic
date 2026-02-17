@@ -592,7 +592,7 @@ The Kabuten homepage serves as the orchestrator's command center.
 ┌──────────────────────────────────────────────────────────────────┐
 │  ┌──────────────────────────────────────────────────────────────┐│
 │  │  KABUTEN (56px)   [Agent Log] [Ask Kabuten] [Podcast Tracker]││
-│  │                   [Social Heatmap] [Portfolio] [Coverage Table]│
+│  │                   [Social Heatmap] [Sectors] [Portfolio] [Coverage Table]│
 │  │  ← logo left      buttons top-right, sticky on scroll →     ││
 │  └──────────────────────────────────────────────────────────────┘│
 │  (sticky toolbar — remains visible on all pages when scrolling)  │
@@ -635,9 +635,9 @@ The Kabuten homepage serves as the orchestrator's command center.
 - The company name should be visually distinguished as a link (e.g. underline on hover, pointer cursor)
 
 **Homepage Navigation Buttons:**
-- All buttons (Agent Log, Ask Kabuten, Podcast Tracker, Social Heatmap, Portfolio Constructor, Coverage Table) are displayed in a **sticky/frozen toolbar** in the **top-right** of the page
+- All buttons (Agent Log, Ask Kabuten, Podcast Tracker, Social Heatmap, Sector Agent, Portfolio Constructor, Coverage Table) are displayed in a **sticky/frozen toolbar** in the **top-right** of the page
 - **Sticky behavior**: The toolbar is fixed to the top of the viewport (`position: sticky` or `position: fixed`) so it remains visible when scrolling down any page
-- **Visible on every page**: This toolbar must appear on **all pages** of the site (homepage, company pages, agent log, ask, podcasts, heatmap, portfolio, coverage table). Implement as part of the root layout or a shared `NavToolbar.tsx` component.
+- **Visible on every page**: This toolbar must appear on **all pages** of the site (homepage, company pages, agent log, ask, podcasts, heatmap, sectors, portfolio, coverage table). Implement as part of the root layout or a shared `NavToolbar.tsx` component.
 - Buttons are displayed in a neat horizontal row with consistent spacing
 - Clean, compact design that doesn't dominate the page — small/medium button size appropriate for a persistent toolbar
 
@@ -1118,6 +1118,143 @@ Transcripts are fetched in priority order. No YouTube dependency.
 - Entries are visually separated like individual posts/cards in a feed — clear visual boundaries between each episode summary
 - Historical archive scrolls down — browse past episodes and their insights by scrolling
 
+### Sector Agent Page (`/sectors`)
+
+A single page with **tabbed navigation** for each sector. Each tab is powered by a dedicated Sector Agent that synthesises Daily Sweep data from the individual company agents within that sector to form and maintain a sector-level Investment View.
+
+**Concept:**
+1. Each Sector Agent covers a defined group of companies
+2. The Sector Agent does **not** conduct its own Daily Sweep — it does not search for news or data independently
+3. Instead, it **collects the Daily Sweep results** from each individual company agent in its group
+4. It formulates and maintains a **Sector Investment View** — similar in structure to individual company Investment Views
+5. After each daily sweep cycle completes, the Sector Agent compares the new company-level sweep data against its current Sector Investment View and decides whether to update it
+
+**Trigger: Automatic — runs after each daily sweep cycle completes**
+
+After the final batch of the daily sweep finishes (batch 29), the system automatically triggers all Sector Agents. Each Sector Agent:
+1. Loads its current Sector Investment View from the database
+2. Fetches today's Daily Sweep results for all companies in its group
+3. Sends the aggregated sweep data + current sector view to Claude API
+4. Claude assesses whether the new information changes the sector thesis
+5. Classifies as NO_CHANGE, INCREMENTAL, or MATERIAL (same framework as company agents)
+6. If MATERIAL: updates the Sector Investment View (escalated to Opus)
+7. Logs the result in the sector's agent log
+
+**Sectors and Companies:**
+
+| Sector | Tab Label | Companies |
+|--------|-----------|-----------|
+| Semicap | Semicap | Tokyo Electron, Disco, Advantest, Screen, Tokyo Seimitsu, Lasertec |
+| Memory | Memory | Samsung Electronics, Kioxia, Micron |
+| MLCC | MLCC | Murata, Taiyo Yuden, Samsung Electro-Mechanics |
+| Networking | Networking | Accton, Lumentum, Coherent, Fabrinet, Ciena, Zhongji Innolight, Eoptolink, Suzhou TFC |
+
+**Sector Investment View — same structure as company views:**
+- **Thesis summary** (max 100 words): Sector-level investment case
+- **Valuation assessment** (max 4 bullet points): Sector valuation context (average multiples, relative value across companies)
+- **Conviction rationale** (max 4 bullet points): Why conviction is at this level for the sector as a whole
+- Stance: Bullish / Neutral / Bearish
+- Conviction: High / Medium / Low
+
+**Sector Agent System Prompt:**
+
+```
+You are a senior equity research analyst covering the {sector_name} sector.
+
+Your role is to maintain an investment view on this sector by synthesising the daily sweep results from the individual company analysts who cover each company in your group.
+
+COMPANIES IN THIS SECTOR:
+{company_list_with_tickers}
+
+CURRENT SECTOR INVESTMENT VIEW:
+{sector_investment_view}
+
+TODAY'S DAILY SWEEP RESULTS FROM COMPANY AGENTS:
+{aggregated_sweep_results — classification, summary, and detail for each company}
+
+INSTRUCTIONS:
+1. Review today's sweep results from each company agent in your sector
+2. Assess whether the aggregated picture changes the sector thesis
+3. Look for sector-wide themes: are multiple companies seeing the same trend (e.g. order momentum, pricing pressure, demand shifts)?
+4. Classify the sector sweep as: NO_CHANGE, INCREMENTAL, or MATERIAL
+5. Apply a HIGH hurdle rate for MATERIAL — most days should be NO_CHANGE
+6. If MATERIAL, update the Sector Investment View with:
+   - Thesis summary (max 100 words)
+   - Valuation assessment (max 4 bullet points)
+   - Conviction rationale (max 4 bullet points)
+
+Respond in JSON format:
+{
+  "classification": "NO_CHANGE" | "INCREMENTAL" | "MATERIAL",
+  "summary": "One-line summary of sector sweep",
+  "detail": {
+    "sector_themes": "...",
+    "company_highlights": "...",
+    "valuation_context": "...",
+    "recommended_action": "..."
+  },
+  "suggested_sector_view_update": { ... } // only if MATERIAL
+}
+```
+
+**Layout — Single page with tabs:**
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  [Sticky nav toolbar]                                             │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  Sector Agent                                                      │
+│  Investment views across 4 tracked sectors                         │
+│                                                                    │
+│  ┌──────────┬──────────┬──────────┬──────────┐                    │
+│  │ Semicap  │ Memory   │ MLCC     │Networking│  ← tabs            │
+│  └──────────┴──────────┴──────────┴──────────┘                    │
+│                                                                    │
+│  ┌─────────────────────────────┐  ┌─────────────────────────────┐│
+│  │  SECTOR INVESTMENT VIEW     │  │  SECTOR AGENT LOG           ││
+│  │  (top-left)                 │  │  (top-right)                ││
+│  │  Stance, conviction,        │  │  History of sector sweep    ││
+│  │  thesis summary,            │  │  outcomes — all records     ││
+│  │  valuation assessment,      │  │  (No Change, Incremental,   ││
+│  │  conviction rationale       │  │  Material)                  ││
+│  └─────────────────────────────┘  └─────────────────────────────┘│
+│                                                                    │
+│  ┌──────────────────────────────────────────────────────────────┐│
+│  │  COMPANIES IN THIS SECTOR                                     ││
+│  │  Table: Company | Ticker | Latest Sweep | View | Conviction   ││
+│  │  Each company name clickable → links to company page          ││
+│  └──────────────────────────────────────────────────────────────┘│
+│                                                                    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Database — `sector_agents` table:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | SERIAL | Primary key |
+| sector_name | TEXT | Sector identifier (e.g. "Semicap", "Memory") |
+| companies | JSONB | Array of company tickers in this sector |
+| investment_view | JSONB | Current Sector Investment View (same structure as company views) |
+| last_sweep_at | TIMESTAMPTZ | Last time sector agent ran |
+| last_material_at | TIMESTAMPTZ | Last material finding |
+| created_at | TIMESTAMPTZ | Record creation |
+
+**Database — `sector_agent_log` table:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | SERIAL | Primary key |
+| sector_name | TEXT | Sector identifier |
+| sweep_date | DATE | Date of sweep |
+| classification | TEXT | NO_CHANGE, INCREMENTAL, or MATERIAL |
+| summary | TEXT | One-line summary |
+| detail_json | JSONB | Full structured detail |
+| created_at | TIMESTAMPTZ | Record creation |
+
+**Nav toolbar:** Add a "Sectors" button to the sticky navigation toolbar on all pages.
+
 ### Social Heatmap Page (`/heatmap`)
 
 A manually-triggered visual heatmap showing which AI and technology keywords are generating the most buzz on X.com (Twitter), based on **real view count data** from Oliver's logged-in X.com account.
@@ -1214,6 +1351,150 @@ The existing Social Heatmap implementation is non-functional (database type erro
 4. **Chrome MCP scan logic** — the scan sequence that navigates X.com, reads view counts, and posts results to the API
 5. **Score computation** — backend function that calculates heat scores from ratio of today's views vs 7-day average
 6. **Error handling** — graceful handling of failed keyword searches (skip and continue), connection drops, and rate limiting
+
+### Sector Agent Page (`/sectors`)
+
+A single page with toggle buttons to switch between sectors. Each sector has a dedicated AI agent that synthesises Daily Sweep data from individual company agents to formulate a sector-level Investment View.
+
+**Trigger: Automatic — runs after each daily sweep completes**
+
+The Sector Agent does **not** conduct its own Daily Sweep. Instead, after the individual company sweeps complete, it collects the sweep results from all companies in each sector and synthesises a sector-level view. This runs automatically — no manual button required.
+
+**How it works:**
+1. Individual company Daily Sweeps complete as normal (via cron batches)
+2. After all batches finish, the Sector Agent runs for each defined sector
+3. For each sector, it collects today's sweep results (NO_CHANGE, INCREMENTAL, MATERIAL) from all companies in that sector
+4. It compares the new information against the current Sector Investment View
+5. If any company sweep was INCREMENTAL or MATERIAL, the Sector Agent re-evaluates its sector-level view
+6. If sector-level conclusions change, the Sector Investment View is updated
+7. All sector-level assessments are logged in the Sector Agent Log
+
+**Sector definitions:**
+
+Sectors are user-defined groupings of companies from the 230-company coverage universe. Each company belongs to exactly one sector. The sector definitions are configured in a `sector-config.ts` file. Oliver defines which sectors exist and which companies belong to each.
+
+**Placeholder sectors** (to be confirmed by Oliver):
+- Semiconductors
+- AI & Software
+- Cloud & Data
+- Hardware & Networking
+- Energy & Materials
+
+**Sector Investment View** — same structure as company Investment Views but at sector level:
+- **Stance**: Bullish / Neutral / Bearish (on the sector)
+- **Conviction**: High / Medium / Low (1–3 stars)
+- **Thesis summary** (max 100 words): Sector-level investment case
+- **Valuation assessment** (max 4 bullet points): Sector valuation context
+- **Conviction rationale** (max 4 bullet points): What drives sector conviction
+
+**Layout — single page with sector toggle buttons:**
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  [Sticky nav toolbar]                                             │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  Sector Agent                                                      │
+│  AI-driven sector views synthesised from individual company        │
+│  Daily Sweeps                                                      │
+│                                                                    │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐│
+│  │ Semis(15)│ │AI/SW (8) │ │Cloud (5) │ │HW/Net(5) │ │Energy(3)││
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └────────┘│
+│                                                                    │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────────┐│
+│  │Companies│ │ Bullish │ │ Neutral │ │ Bearish │ │Last Material││
+│  │   15    │ │   11    │ │    3    │ │    1    │ │ 11 Feb 2026││
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └───────────┘│
+│                                                                    │
+│  ┌─────────────────────────┐  ┌─────────────────────────────────┐│
+│  │ SECTOR INVESTMENT VIEW   │  │ SECTOR AGENT LOG                 ││
+│  │ (left column)            │  │ (right column)                   ││
+│  │                          │  │                                   ││
+│  │ ▲ Bullish  ★★★☆         │  │ 2026-02-12 🟡 Incremental       ││
+│  │ Updated: 12 Feb 2026     │  │ SK Hynix HBM3E yield...         ││
+│  │                          │  │                                   ││
+│  │ THESIS                   │  │ 2026-02-11 🔴 Material           ││
+│  │ [max 100 words]          │  │ TSMC Arizona fab achieves...     ││
+│  │                          │  │                                   ││
+│  │ VALUATION ASSESSMENT     │  │ 2026-02-11 🟡 Incremental       ││
+│  │ • bullet 1               │  │ AMD MI300X gaining traction...   ││
+│  │ • bullet 2               │  │                                   ││
+│  │ • bullet 3               │  │ [shows all entries including     ││
+│  │ • bullet 4               │  │  No Change ⚪]                   ││
+│  │                          │  │                                   ││
+│  │ CONVICTION RATIONALE     │  │                                   ││
+│  │ • bullet 1               │  │                                   ││
+│  │ • bullet 2               │  │                                   ││
+│  │ • bullet 3               │  │                                   ││
+│  │ • bullet 4               │  │                                   ││
+│  └─────────────────────────┘  └─────────────────────────────────┘│
+│                                                                    │
+│  ┌──────────────────────────────────────────────────────────────┐│
+│  │ COMPANIES IN [SECTOR] (full width)                            ││
+│  │ Grid of company chips — name, ticker, individual stance       ││
+│  │ Each chip clickable → navigates to company page               ││
+│  └──────────────────────────────────────────────────────────────┘│
+│                                                                    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Sector toggle buttons:**
+- Row of buttons at the top of the page, one per sector
+- Each button shows sector name and company count, e.g. "Semiconductors (15)"
+- Active sector button is solid black with white text
+- Clicking a button switches the entire page content to that sector
+- Default: first sector selected on page load
+
+**Sector Agent Log:**
+- Shows **all** sweep-derived entries for the sector (including No Change ⚪, Incremental 🟡, Material 🔴)
+- Each entry shows: date, classification badge, summary of sector-level assessment, and related company names (clickable links to company pages)
+- Newest entries at top, reverse chronological
+
+**Stats row:**
+- Company count, Bullish count, Neutral count, Bearish count, Last Material Finding date
+
+**Companies grid:**
+- Full-width section below the two-column layout
+- Grid of company chips showing: company name, ticker, individual stance (Bullish/Neutral/Bearish)
+- Each chip clickable → navigates to company page
+
+**Database — `sector_views` table:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | SERIAL | Primary key |
+| sector_name | TEXT | Sector name |
+| stance | TEXT | bullish / neutral / bearish |
+| conviction | TEXT | high / medium / low |
+| thesis_summary | TEXT | Max 100 words |
+| valuation_assessment | JSONB | Array of up to 4 bullet points |
+| conviction_rationale | JSONB | Array of up to 4 bullet points |
+| last_updated | TIMESTAMPTZ | When view was last changed |
+| last_updated_reason | TEXT | What triggered the update |
+| created_at | TIMESTAMPTZ | Record creation time |
+
+**Database — `sector_log` table:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | SERIAL | Primary key |
+| sector_name | TEXT | Sector name |
+| log_date | DATE | Date of assessment |
+| classification | TEXT | NO_CHANGE / INCREMENTAL / MATERIAL |
+| summary | TEXT | Sector-level assessment summary |
+| related_companies | JSONB | Array of company names that drove the assessment |
+| created_at | TIMESTAMPTZ | Record creation time |
+
+**Implementation flow:**
+1. After all 29 daily sweep cron batches complete, a final cron trigger runs the Sector Agent
+2. For each defined sector, collect today's sweep results from `action_log` for companies in that sector
+3. Feed the collected results + current Sector Investment View to Claude API (Sonnet for routine, Opus if material)
+4. Claude assesses whether sector-level conclusions have changed
+5. Store updated Sector Investment View in `sector_views` and log entry in `sector_log`
+6. Frontend reads from these tables to render the page
+
+**Navigation:** Add "🏭 Sectors" button to the sticky navigation toolbar on all pages.
 
 ### Highest Conviction Top 20 (Portfolio Constructor Page)
 
@@ -1535,8 +1816,9 @@ INSTRUCTIONS:
 6. If INCREMENTAL or MATERIAL, provide a structured brief
 7. If MATERIAL, recommend specific updates to the investment view or model
 8. If updating the Investment View, you MUST include:
-   - A valuation assessment paragraph (is the stock cheap/expensive vs 2-year forward earnings? how does current multiple compare to 5yr range? is valuation justified by growth?)
-   - A conviction rationale (1-2 lines at the end explaining WHY conviction is at this level — what specific factors drive the confidence or lack thereof)
+   - A thesis summary (max 100 words)
+   - A valuation assessment (max 4 bullet points)
+   - A conviction rationale (max 4 bullet points explaining WHY conviction is at this level)
 
 Respond in the following JSON format:
 {
@@ -1574,7 +1856,7 @@ This constraint ensures the rating carries real signal. A High Conviction Buy me
 When a company is first seeded, Claude generates the initial Investment View using:
 - System prompt: "You are a senior equity research analyst. Generate an initial investment view for {company_name} ({ticker}) based on current publicly available information."
 - Claude uses web search to gather: recent earnings, analyst coverage, industry trends, competitive positioning, current valuation multiples, and forward earnings estimates
-- Output format: Bull/Bear/Neutral stance, conviction level (high/medium/low), thesis summary (2-3 paragraphs covering: key drivers, risks, catalysts, valuation assessment, and conviction rationale)
+- Output format: Bull/Bear/Neutral stance, conviction level (high/medium/low), thesis summary (max 100 words), valuation assessment (max 4 bullet points), conviction rationale (max 4 bullet points)
 
 **Daily review (during sweep):**
 
@@ -1589,38 +1871,37 @@ During each daily sweep, the Investment View is assessed but only updated when m
 
 **Required Investment View content — every view MUST include:**
 
-1. **Thesis summary** (2-3 paragraphs): Core investment case covering key drivers, risks, and catalysts.
+1. **Thesis summary** (max 100 words): Concise investment case covering key drivers, risks, and catalysts. Must not exceed 100 words.
 
-2. **Valuation assessment** (required paragraph): Every Investment View must explicitly address valuation. This should cover:
+2. **Valuation assessment** (max 4 bullet points): Every Investment View must explicitly address valuation. Cover up to 4 of the following:
    - Is the stock cheap or expensive relative to its expected 2-year forward earnings trajectory?
    - How does the current PER/PBR compare to the 5-year historical trading range?
    - Is the valuation justified by the growth outlook, or is it stretched?
-   - Are there valuation catalysts (e.g. re-rating potential from earnings upgrades) or risks (e.g. expensive stock with negative newsflow, multiple compression risk)?
-   - Example good valuation assessment: "At 28x forward PER, Advantest trades at the 65th percentile of its 5-year range (15x–45x). Given the structural HBM test demand thesis and 30%+ EPS growth expected over FY2026-27, we view this as reasonable with room for re-rating. However, any slowdown in HBM orders could see the multiple compress to the 20-25x range."
-   - Example for expensive stock: "At 55x forward PER, Palantir trades near the top of its historical range and well above software peers. Despite strong government contract momentum, the valuation already prices in aggressive commercial growth. With recent negative sentiment around US government spending cuts, the risk/reward is unfavourable at current levels."
+   - Are there valuation catalysts (re-rating potential) or risks (multiple compression)?
 
-3. **Conviction rationale** (required — 1-2 lines at the end): Every Investment View must conclude with a clear explanation of WHY the conviction level is set where it is. This is not just restating the stance — it must explain what specifically drives the conviction level:
-   - **High conviction** example: "Conviction: HIGH — Strong structural demand drivers (HBM test intensity per die increasing 3x), clear competitive moat, and management execution track record provide high visibility on the earnings trajectory."
-   - **Medium conviction** example: "Conviction: MEDIUM — The thesis on edge AI SoC adoption is compelling but still early-stage. Customer design win announcements are needed to confirm the growth trajectory. Valuation is reasonable but not cheap enough to compensate for execution uncertainty."
-   - **Low conviction** example: "Conviction: LOW — While the turnaround story has merit, foundry yield issues remain unresolved, management credibility is weak after multiple missed targets, and the stock is not cheap enough at 1.2x PBR to offer a sufficient margin of safety."
+3. **Conviction rationale** (max 4 bullet points): Every Investment View must conclude with a clear explanation of WHY the conviction level is set where it is. Up to 4 bullet points covering what specifically drives the conviction level. Not just restating the stance — must explain the reasoning.
+
+4. **Key drivers** (max 3 bullet points): The top 3 factors driving the investment case. Keep concise — one line each.
+
+5. **Key risks** (max 3 bullet points): The top 3 risks to the thesis. Keep concise — one line each.
 
 **Investment View content structure (stored in `profile_json.investment_view_detail`):**
 ```json
 {
   "stance": "bullish" | "neutral" | "bearish",
   "conviction": "high" | "medium" | "low",
-  "thesis_summary": "2-3 paragraph investment thesis including key drivers, risks, catalysts",
-  "valuation_assessment": "Paragraph assessing current valuation vs forward earnings, historical range, and whether valuation supports or undermines the thesis",
-  "conviction_rationale": "1-2 lines explaining WHY conviction is at this level — what specific factors drive the confidence (or lack thereof)",
-  "key_drivers": ["driver 1", "driver 2", "driver 3"],
-  "key_risks": ["risk 1", "risk 2", "risk 3"],
+  "thesis_summary": "Concise investment thesis — max 100 words",
+  "valuation_assessment": "Max 4 bullet points on current valuation",
+  "conviction_rationale": "Max 4 bullet points explaining WHY conviction is at this level",
+  "key_drivers": ["driver 1", "driver 2", "driver 3"],   // exactly 3 bullet points max
+  "key_risks": ["risk 1", "risk 2", "risk 3"],           // exactly 3 bullet points max
   "catalysts": ["catalyst 1", "catalyst 2"],
   "last_updated": "2026-02-10T07:15:00Z",
   "last_updated_reason": "Material finding: HBM test platform win at SK Hynix"
 }
 ```
 
-**Display on company page:** The Investment View box shows the stance (with arrow indicator), conviction stars, thesis summary, valuation assessment, key drivers, risks, and concludes with the conviction rationale. The last-updated timestamp with reason is shown at the bottom. Positioned top-left on the desktop layout.
+**Display on company page:** The Investment View box shows the stance (with arrow indicator), conviction stars, thesis summary (max 100 words), valuation assessment (max 4 bullets), key drivers (max 3 bullets), key risks (max 3 bullets), and concludes with the conviction rationale (max 4 bullets). The last-updated timestamp with reason is shown at the bottom. Positioned top-left on the desktop layout.
 
 ---
 
@@ -1864,7 +2145,7 @@ The logo is the one standout visual element against the clean white design. It u
 
 ### Phase 5 — Expansion & New Features
 - [ ] **Password protection** — Simple password gate on homepage (`fingerthumb`), session cookie, `PasswordGate.tsx` + `auth.ts`
-- [ ] **Sticky navigation toolbar** — All nav buttons (Agent Log, Ask Kabuten, Podcast Tracker, Social Heatmap, Portfolio Constructor, Coverage Table) in a **sticky toolbar top-right** of every page. `position: sticky/fixed`, visible on scroll. Implement as shared `NavToolbar.tsx` in root layout.
+- [ ] **Sticky navigation toolbar** — All nav buttons (Agent Log, Ask Kabuten, Podcast Tracker, Social Heatmap, Sector Agent, Portfolio Constructor, Coverage Table) in a **sticky toolbar top-right** of every page. `position: sticky/fixed`, visible on scroll. Implement as shared `NavToolbar.tsx` in root layout.
 - [ ] **Desktop-optimized company page** — Two-column layout: Investment View (top-left) + Analyst Agent Log (top-right), Daily Sweep Criteria centered below (two-column: Sources left, Focus right with Edit button). No mobile-responsive concerns — optimize for PC/desktop.
 - [ ] **EDINET display** — Show green tick ☑ with "(Japan only)" label on all company pages. Greyed out for non-Japanese companies but still shows green tick.
 - [ ] **Daily Sweep Criteria two-column layout** — Sources on the left column, Focus on the right column. Add [Edit] button to each Focus bullet point for inline editing. Sources shows ✖ (Pending) for Reddit, Bloomberg, Alphasense, Internal Research.
@@ -1878,6 +2159,7 @@ The logo is the one standout visual element against the clean white design. It u
 - [ ] **Analyst Agent Log page** (`/agent-log`) — Full searchable history of all agent actions, search by ticker/company/theme
 - [ ] **Ask Kabuten page** (`/ask`) — **Fully wired and functional** Q&A interface. Two-column layout: **question history log on left sidebar** (all previous questions, newest first, clickable to reload Q&A, persisted in `ask_kabuten_log` DB table). Main Q&A area on right. Backend API route (`/api/ask/route.ts`) that queries DB + Claude API. Source toggle (Kabuten/Claude/Internet/All), sample questions.
 - [ ] **Podcast Tracker page** (`/podcasts`) — Manual [Run Podcast Scan] button triggers server-side Claude API web search + transcript analysis for **11** tracked podcasts (added: Semi Doped). **Button must work without Chrome MCP**. **No dropdown chevrons** — each episode summary displayed fully expanded in sequential log format like social media thread. Newest at top — new summaries added to the top of the page. **Frozen header** (Run button + search bar sticky on scroll). Add **"Podcasts Tracked" table** in top-left listing all 11 podcast titles alphabetically.
+- [ ] **Sector Agent page** (`/sectors`) — New page. Single page with toggle buttons per sector. Sector Agent runs automatically after daily sweeps complete — collects company sweep results and synthesises sector-level Investment View. Create `sector_views` and `sector_log` tables. Frontend matches `sector-agent-mockup.html` design. Add "🏭 Sectors" to nav toolbar. Sector definitions configured in `sector-config.ts`.
 - [ ] **Social Heatmap page** (`/heatmap`) — **REBUILD FROM SCRATCH.** Existing implementation is broken. New methodology: **Chrome MCP required** (no fallback). Scan navigates X.com search for each of 40 keywords, reads view counts from top 3 posts, compares against 7-day rolling average to compute heat score (0–100). Button disabled when Chrome MCP not connected. Create `heatmap_snapshots` table, build API routes (`/api/heatmap/record`, `/api/heatmap/results`), build frontend matching `heatmap-mockup.html` design. See full methodology in Heatmap section.
 - [ ] **Logo enhancement** — More 3D depth, enhanced metallic effect, background shading
 - [ ] **Seed all 230 companies** — Build seed.json entries for all 230 companies listed in the Coverage section (105 US + 125 APAC), with ticker, exchange, sector, profile, market_cap_usd, country, classification, and sweep criteria. Update SearchBar to load from DB.
@@ -1907,6 +2189,8 @@ kabuten-agentic/
 │   │   │   └── page.tsx              # Podcast Tracker page
 │   │   ├── heatmap/
 │   │   │   └── page.tsx              # Social Heatmap page
+│   │   ├── sectors/
+│   │   │   └── page.tsx              # Sector Agent page (tabbed: Semicap, Memory, MLCC, Networking)
 │   │   ├── portfolio/
 │   │   │   └── page.tsx              # Portfolio Constructor page
 │   │   └── api/
@@ -1929,6 +2213,9 @@ kabuten-agentic/
 │   │       └── heatmap/
 │   │           ├── run/route.ts      # POST — manual trigger: starts Chrome MCP scan of X.com
 │   │           └── route.ts          # GET — heatmap snapshot data and history
+│   │       ├── sectors/
+│   │       │   ├── route.ts          # GET — all sector views and latest log entries
+│   │       │   └── assess/route.ts   # POST — trigger sector agent assessment (called after daily sweep)
 │   │       ├── portfolio/
 │   │       │   ├── route.ts          # GET — current portfolio holdings, returns, change log
 │   │       │   ├── rebalance/route.ts # GET — cron trigger: check agent views, rebalance if needed
@@ -1944,6 +2231,7 @@ kabuten-agentic/
 │   │       ├── executor.ts           # Main sweep orchestrator
 │   │       ├── podcast-processor.ts  # Podcast transcript fetch (Claude API web search primary → metacast.app optional → podscripts.co backup) + Claude analysis. 11 podcasts.
 │   │       ├── heatmap-collector.ts  # Keyword buzz scan via Claude API web search (primary) + optional Chrome MCP for enhanced X.com data
+│   │       ├── sector-agent.ts      # Sector Agent: collects company sweep results per sector, assesses sector-level materiality, updates sector views
 │   │       └── fetchers/             # Data source fetchers
 │   │           ├── ir-page.ts        # Direct fetch with HTML stripping
 │   │           ├── edinet.ts         # EDINET API v2
@@ -1961,7 +2249,7 @@ kabuten-agentic/
 │       ├── CompanyTable.tsx          # Homepage sortable company table (Code, Name, Country, Classification, Mkt Cap, View, Conviction)
 │       ├── InvestmentView.tsx        # Thesis, assumptions, risks display
 │       ├── KabutenLogo.tsx           # Metallic gradient logo (hero/navbar variants, 3D depth)
-│       ├── NavButtons.tsx            # Horizontal navigation buttons (Agent Log, Ask Kabuten, Podcast Tracker, Social Heatmap, Portfolio Constructor)
+│       ├── NavButtons.tsx            # Horizontal navigation buttons (Agent Log, Ask Kabuten, Podcast Tracker, Social Heatmap, Sector Agent, Portfolio Constructor)
 │       ├── PasswordGate.tsx          # Password input overlay (client component)
 │       ├── TopConviction.tsx         # Highest Conviction Top 20 ranked list (homepage box)
 │       ├── PortfolioReturns.tsx      # Portfolio returns grid (1D/1W/1M/3M/1Y/3Y/5Y/inception)

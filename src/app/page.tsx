@@ -1,17 +1,10 @@
 import KabutenLogo from "@/components/KabutenLogo";
 import SearchBar from "@/components/SearchBar";
-import ActionLog from "@/components/ActionLog";
-import { fetchActionLog } from "@/lib/data";
+import { PaginatedActionLog } from "@/components/ActionLog";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  const actionLog = await fetchActionLog();
-  // Only show Incremental and Material entries — exclude No Change
-  const filteredLog = actionLog.filter(
-    (entry) => entry.severity === "incremental" || entry.severity === "notable" || entry.severity === "material"
-  );
-
+export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -24,9 +17,9 @@ export default async function Home() {
 
       {/* Analyst Agent Log */}
       <div className="max-w-4xl mx-auto px-4 pb-16">
-        <ActionLog
-          entries={filteredLog}
+        <PaginatedActionLog
           title="Analyst Agent Log"
+          pageSize={50}
           showCompany={true}
         />
       </div>
