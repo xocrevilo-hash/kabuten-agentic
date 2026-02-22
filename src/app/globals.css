@@ -29,6 +29,16 @@ body {
   background-position: 0 0;
 }
 
+/* Mobile drawer slide-in animation */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.2s ease-out forwards;
+}
+
 /* Kabuten Logo Metallic Gradient — Enhanced 3D */
 @keyframes metallicFlow {
   0% { background-position: 0% 50%; }

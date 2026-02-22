@@ -1368,175 +1368,356 @@ The existing Social Heatmap implementation is non-functional (database type erro
 
 ### Sector Agent Page (`/sectors`)
 
-A single page with toggle buttons to switch between sectors. Each sector has a dedicated AI agent that synthesises Daily Sweep data from individual company agents to formulate a sector-level Investment View.
+> **⚠️ This section supersedes all previous Sector Agent specifications.**  
+> Last updated: 22 Feb 2026. Company lists verified against live database.
 
-**Trigger: Automatic — runs after each daily sweep completes**
+#### Overview
 
-The Sector Agent does **not** conduct its own Daily Sweep. Instead, after the individual company sweeps complete, it collects the sweep results from all companies in each sector and synthesises a sector-level view. This runs automatically — no manual button required.
+The Sectors page has been redesigned from a simple tab + two-column card layout into a **Slack/Symphony-style chatroom interface**. Each sector now has a dedicated named Lead Agent with its own persistent conversation thread. The page is powered by a hierarchical multi-agent system using Claude Sonnet 4.6.
 
-**How it works:**
-1. Individual company Daily Sweeps complete as normal (via cron batches)
-2. After all batches finish, the Sector Agent runs for each defined sector
-3. For each sector, it collects today's sweep results (NO_CHANGE, INCREMENTAL, MATERIAL) from all companies in that sector
-4. It compares the new information against the current Sector Investment View
-5. If any company sweep was INCREMENTAL or MATERIAL, the Sector Agent re-evaluates its sector-level view
-6. If sector-level conclusions change, the Sector Investment View is updated
-7. All sector-level assessments are logged in the Sector Agent Log
+**Trigger: Automatic — cron runs after each daily sweep completes**
 
-**Sector definitions:**
+---
 
-Sectors are user-defined groupings of companies from the 230-company coverage universe. Each company belongs to exactly one sector, defined by its `sector_group` field in the companies table. The sector definitions are configured in a `sector-config.ts` file. Oliver defines which sectors exist and which companies belong to each. The same `sector_group` field is used for both the Sector Agent page groupings and the sector peer context injected into individual company sweeps.
-
-**Defined sectors (7 sectors, 49 companies):**
-
-| Sector | Companies | Count |
-|--------|-----------|-------|
-| Australia Enterprise Software | REA Group, Seek, WiseTech Global, Xero, Pro Medicus | 5 |
-| China Digital Consumption | Alibaba, Baidu, NetEase, Tencent, Tencent Music, Trip.com | 6 |
-| Data-centre Power & Cooling | Auras Technology, Delta Electronics, Hitachi, Vistra | 4 |
-| India IT Services | Infosys, TCS, Tech Mahindra, Wipro | 4 |
-| Memory Semiconductors | Kioxia, Micron, Samsung Electronics, SanDisk, Seagate, SK Hynix | 6 |
-| Networking & Optics | Accton Technology, Celestica, Coherent, Fabrinet, Lumentum, Sunny Optical, Suzhou TFC, Zhongji Innolight | 8 |
-| Semiconductor Production Equipment | ACM Research, Advantest, Applied Materials, ASE Technology, ASML, Disco, Ebara, Hoya, KLA, Kokusai Electric, Lam Research, Lasertec, Rorze, Screen Holdings, Tokyo Electron, Tokyo Seimitsu | 16 |
-
-**Note:** 181 companies have no `sector_group` assigned. They still receive individual sweeps and peer context is not injected for ungrouped companies. More sectors can be added later by assigning `sector_group` values to additional companies.
-
-**Sector Investment View** — same structure as company Investment Views but at sector level:
-- **Stance**: Bullish / Neutral / Bearish (on the sector)
-- **Conviction**: High / Medium / Low (1–3 stars)
-- **Thesis summary** (max 100 words): Sector-level investment case
-- **Valuation assessment** (max 4 bullet points): Sector valuation context
-- **Conviction rationale** (max 4 bullet points): What drives sector conviction
-
-**Layout — single page with sector toggle buttons:**
+#### Multi-Agent Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│  [Sticky nav toolbar]                                             │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                    │
-│  Sector Agent                                                      │
-│  AI-driven sector views synthesised from individual company        │
-│  Daily Sweeps                                                      │
-│                                                                    │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐            │
-│  │AU Ent(5) │ │China D(6)│ │DC Pwr(4) │ │India(4)  │            │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘            │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────┐                     │
-│  │Memory(6) │ │Net&Opt(8)│ │Semi Equip(16)│                     │
-│  └──────────┘ └──────────┘ └──────────────┘                     │
-│                                                                    │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────────┐│
-│  │Companies│ │ Bullish │ │ Neutral │ │ Bearish │ │Last Material││
-│  │   15    │ │   11    │ │    3    │ │    1    │ │ 11 Feb 2026││
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └───────────┘│
-│                                                                    │
-│  ┌─────────────────────────┐  ┌─────────────────────────────────┐│
-│  │ SECTOR INVESTMENT VIEW   │  │ SECTOR AGENT LOG                 ││
-│  │ (left column)            │  │ (right column)                   ││
-│  │                          │  │                                   ││
-│  │ ▲ Bullish  ★★★☆         │  │ 2026-02-12 🟡 Incremental       ││
-│  │ Updated: 12 Feb 2026     │  │ SK Hynix HBM3E yield...         ││
-│  │                          │  │                                   ││
-│  │ THESIS                   │  │ 2026-02-11 🔴 Material           ││
-│  │ [max 100 words]          │  │ TSMC Arizona fab achieves...     ││
-│  │                          │  │                                   ││
-│  │ VALUATION ASSESSMENT     │  │ 2026-02-11 🟡 Incremental       ││
-│  │ • bullet 1               │  │ AMD MI300X gaining traction...   ││
-│  │ • bullet 2               │  │                                   ││
-│  │ • bullet 3               │  │ [shows all entries including     ││
-│  │ • bullet 4               │  │  No Change ⚪]                   ││
-│  │                          │  │                                   ││
-│  │ CONVICTION RATIONALE     │  │                                   ││
-│  │ • bullet 1               │  │                                   ││
-│  │ • bullet 2               │  │                                   ││
-│  │ • bullet 3               │  │                                   ││
-│  │ • bullet 4               │  │                                   ││
-│  └─────────────────────────┘  └─────────────────────────────────┘│
-│                                                                    │
-│  ┌──────────────────────────────────────────────────────────────┐│
-│  │ COMPANIES IN [SECTOR] (full width)                            ││
-│  │ Grid of company chips — name, ticker, individual stance       ││
-│  │ Each chip clickable → navigates to company page               ││
-│  └──────────────────────────────────────────────────────────────┘│
-│                                                                    │
-└──────────────────────────────────────────────────────────────────┘
+KabutenOrchestrator
+├── APEX    → AU Enterprise Software     (5 companies)
+├── ORIENT  → China Digital Consumption  (6 companies)
+├── VOLT    → DC Power & Cooling         (4 companies)
+├── INDRA   → India IT Services          (4 companies)
+├── HELIX   → Memory Semis              (6 companies)
+├── PHOTON  → Networking & Optics        (7 companies)
+└── FORGE   → Semi Equipment            (16 companies)
+     └── Each Sector Lead orchestrates N × CompanyCoverageAgent
 ```
 
-**Sector toggle buttons:**
-- Row of buttons at the top of the page, one per sector
-- Each button shows sector name and company count, e.g. "Memory Semiconductors (6)"
-- Active sector button is solid black with white text
-- Clicking a button switches the entire page content to that sector
-- Default: first sector selected on page load
+**Agent roles:**
 
-**Sector Agent Log:**
-- Shows **all** sweep-derived entries for the sector (including No Change ⚪, Incremental 🟡, Material 🔴)
-- Each entry shows: date, classification badge, summary of sector-level assessment, and related company names (clickable links to company pages)
-- Newest entries at top, reverse chronological
+- **KabutenOrchestrator** — top-level manager. Runs all 7 sector sweeps concurrently via `asyncio.gather`. Routes PM chat messages to the correct sector thread.
+- **SectorLeadAgent** (APEX / ORIENT / VOLT / INDRA / HELIX / PHOTON / FORGE) — one per sector. Orchestrates its CompanyCoverageAgents, synthesises findings into a sector view, escalates material findings for deep-dive analysis, maintains the persistent sector conversation thread, and converses with the portfolio manager.
+- **CompanyCoverageAgent** — one per company (48 total). Sub-agent invoked by its parent SectorLead. Returns structured JSON findings. Runs at `effort="low"` for routine sweeps, `effort="high"` for escalated deep-dives.
 
-**Stats row:**
-- Company count, Bullish count, Neutral count, Bearish count, Last Material Finding date
+**Sonnet 4.6 features in use:**
 
-**Companies grid:**
-- Full-width section below the two-column layout
-- Grid of company chips showing: company name, ticker, individual stance (Bullish/Neutral/Bearish)
-- Each chip clickable → navigates to company page
+| Feature | Where used | Purpose |
+|---|---|---|
+| Multi-agent orchestration | `orchestrator.py` + `sector_agent.py` | Lead delegates to sub-agents, synthesises results |
+| Context compaction (beta) | `sector_agent.py` — all `chat()` calls | Sector threads persist indefinitely without truncation |
+| 1M token context window (beta) | `sector_agent.py` — all `chat()` calls | Full sweep history stays in context |
+| Adaptive thinking (`effort` param) | All agent API calls | `low` for routine, `medium` for synthesis, `high` for escalations |
+| Structured outputs (`output_config.format`) | Both agent classes | Guaranteed JSON schema on every sweep and synthesis |
+| Web search (`web_search_20260209`) | `company_agent.py` | Dynamic filtering of search results per sweep |
 
-**Database — `sector_views` table:**
+**Beta headers required on all SectorLead API calls:**
+```python
+betas=["interleaved-thinking-2025-05-14", "context-1m-2025-08-07"]
+```
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | SERIAL | Primary key |
-| sector_name | TEXT | Sector name |
-| stance | TEXT | bullish / neutral / bearish |
-| conviction | TEXT | high / medium / low |
-| thesis_summary | TEXT | Max 100 words |
-| valuation_assessment | JSONB | Array of up to 4 bullet points |
-| conviction_rationale | JSONB | Array of up to 4 bullet points |
-| last_updated | TIMESTAMPTZ | When view was last changed |
-| last_updated_reason | TEXT | What triggered the update |
-| created_at | TIMESTAMPTZ | Record creation time |
+**Agent capabilities — all three are live from day one:**
+- **Memory:** Each agent's `_thread_history` accumulates every sweep, finding, and conversation across sessions. Persisted to Postgres after every sweep and chat, loaded on startup. Context compaction means the thread never hits a ceiling.
+- **Learning:** The full thread is passed on every API call. If the PM shared intelligence last week, the agent incorporates it into this week's synthesis automatically.
+- **Conversation:** PM can message any Sector Lead at any time via the chat composer. The `chat(sector_key, message)` method on `KabutenOrchestrator` routes it to the correct agent and appends the exchange to the persistent thread.
 
-**Database — `sector_log` table:**
+---
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | SERIAL | Primary key |
-| sector_name | TEXT | Sector name |
-| log_date | DATE | Date of assessment |
-| classification | TEXT | NO_CHANGE / INCREMENTAL / MATERIAL |
-| summary | TEXT | Sector-level assessment summary |
-| related_companies | JSONB | Array of company names that drove the assessment |
-| created_at | TIMESTAMPTZ | Record creation time |
+#### Agent Code Files
 
-**Implementation flow:**
+The agent package lives at `agents/` in the repo root. All files are complete and ready — do not regenerate them:
 
-**Initial setup (one-time):**
-1. Add `sector_group` column to `companies` table
-2. Set `sector_group` for the 49 companies listed in the sector definitions table above
-3. Create `sector_views` and `sector_log` tables
-4. Create `sector-config.ts` with the 7 sector names
+| File | Purpose |
+|---|---|
+| `agents/config.py` | All 7 sector + 48 company definitions — **single source of truth** for tickers, exchanges, and sector-specific system prompt context |
+| `agents/company_agent.py` | `CompanyCoverageAgent` — sub-agent, structured JSON output, web search, effort scaling |
+| `agents/sector_agent.py` | `SectorLeadAgent` — orchestration, context compaction, synthesis, chat |
+| `agents/orchestrator.py` | `KabutenOrchestrator` — top-level manager, concurrent sweep, chat routing |
+| `agents/__init__.py` | Package exports |
 
-**Initial Sector View generation (first run or empty `sector_views`):**
-When a sector has no existing view in `sector_views`, the Sector Agent must generate an initial view before the page can display anything. This runs automatically:
-1. For each sector in `sector-config.ts`, check if a row exists in `sector_views`
-2. If no row exists: load the current Investment Views (`profile_json`) for all member companies in that sector
-3. Feed all member company Investment Views to Claude API with prompt: "You are a senior sector analyst. Based on the individual company Investment Views below, generate an initial sector-level Investment View for the {sector_name} sector."
-4. Store the generated view in `sector_views` and log "Initial sector view generated" in `sector_log`
-5. This ensures the `/sectors` page is populated on first load — **it must not show an empty page**
+---
 
-**Daily operation (after each sweep):**
-1. After all daily sweep cron batches complete, a final cron trigger runs the Sector Agent
-2. For each defined sector, collect today's sweep results from `action_log` for companies in that sector (filter by `sector_group`)
-3. Feed the collected results + current Sector Investment View from `sector_views` to Claude API (Sonnet for routine, Opus if material)
-4. Claude assesses whether sector-level conclusions have changed
-5. Store updated Sector Investment View in `sector_views` and log entry in `sector_log`
-6. Frontend reads from these tables to render the page
+#### Sector & Company Definitions
 
-**Critical: the Sector Agent cron trigger must run after ALL company sweep batches have completed.** Schedule it at least 30 minutes after the last company batch to ensure all results are in the database. For the current schedule (last non-US batch around 4:30 AM JST, last Sunday batch around 6:30 AM JST), schedule the Sector Agent at **7:00 AM JST daily** (22:00 UTC).
+All 7 sectors and 48 companies verified against the live database on 22 Feb 2026. Do not alter tickers or exchanges.
 
-**Navigation:** Add "🏭 Sectors" button to the sticky navigation toolbar on all pages.
+| Agent | Sector | Companies (ticker — exchange) |
+|---|---|---|
+| **APEX** | AU Enterprise Software | WTC–ASX, XRO–ASX, PME–ASX, REA–ASX, SEK–ASX |
+| **ORIENT** | China Digital Consumption | BABA–HKEX, BIDU–NASDAQ, NTES–NASDAQ, 700.HK–HKEX, TME–NYSE, TCOM–NASDAQ |
+| **VOLT** | DC Power & Cooling | 3324.TW–TWSE, 2308.TW–TWSE, 6501.T–TSE, VST–NYSE |
+| **INDRA** | India IT Services | INFY.NS–NSE, TCS.NS–NSE, TECHM.NS–NSE, WIPRO.NS–NSE |
+| **HELIX** | Memory Semis | 285A.T–TSE, MU–NASDAQ, 005930.KS–KRX, SNDK–NASDAQ, STX–NASDAQ, 000660.KS–KRX |
+| **PHOTON** | Networking & Optics | 2345.TW–TWSE, CLS–NYSE, COHR–NYSE, FN–NYSE, LITE–NASDAQ, 300394.SZ–SZSE, 300308.SZ–SZSE |
+| **FORGE** | Semi Equipment | 688082.SS–SHSE, 6857.T–TSE, AMAT–NASDAQ, 3711.TW–TWSE, ASML–NASDAQ, 6146.T–TSE, 6361.T–TSE, 7741.T–TSE, KLAC–NASDAQ, 6525.T–TSE, LRCX–NASDAQ, 6920.T–TSE, 6323.T–TSE, 7735.T–TSE, 8035.T–TSE, 7729.T–TSE |
+
+**Note:** Networking & Optics is now **7 companies** (Sunny Optical removed, confirmed against live DB). Semi Equipment remains 16.
+
+**Note:** 182 companies have no `sector_group` assigned. They still receive individual sweeps; peer context is not injected for ungrouped companies.
+
+---
+
+#### UI — Three-Pane Chatroom Layout
+
+The page is redesigned from its current tab + card layout into a three-pane chatroom. This is a frontend change to `app/sectors/page.tsx` — the underlying data model is extended by two new DB tables (see below).
+
+```
+┌─────────────────┬───────────────────────────────┬──────────────────┐
+│   LEFT SIDEBAR  │         CENTRE FEED           │   RIGHT PANEL    │
+│   (230px)       │         (flex: 1)             │   (270px)        │
+├─────────────────┼───────────────────────────────┼──────────────────┤
+│ Kabuten brand   │ Channel header                │ Agent tab        │
+│                 │ Stats bar                     │ Sector View tab  │
+│ SECTOR THREADS  │                               │ Coverage tab     │
+│ • APEX          │ Message feed                  │                  │
+│ • ORIENT        │  - Date dividers              │ Agent profile    │
+│ • VOLT          │  - Sweep messages             │ Sector snapshot  │
+│ • INDRA         │  - Material finding cards     │ Coverage list    │
+│ • HELIX         │  - PM messages                │ My notes         │
+│ • PHOTON        │  - Agent replies              │                  │
+│ • FORGE         │                               │                  │
+│                 │ Message composer              │                  │
+│ PM footer       │                               │                  │
+└─────────────────┴───────────────────────────────┴──────────────────┘
+```
+
+**Design language — must match existing Kabuten exactly:**
+- Background: `#f4f5f7`, cards on `#ffffff`
+- Kanji wallpaper: tiling SVG at ~4.5% opacity (existing pattern)
+- Typography: Inter (body), IBM Plex Mono (labels, timestamps, tickers)
+- Active sector: dark navy pill `#111827`
+- Bullish: `#16a34a` · Neutral: `#ea580c` · Bearish: `#dc2626`
+- MATERIAL badge: red · INCREMENTAL badge: blue
+- Borders: `#e2e5ea` · Light theme only — no dark mode
+
+**Message types in the feed:**
+
+| Type | Tag | Trigger |
+|---|---|---|
+| Daily Sweep | Blue | Automatic, once per day |
+| Material Finding | Amber | Agent escalation (`finding_type=material`) |
+| Sector View | Green | Agent's synthesised sector view update |
+| PM Message | Navy | PM sends via composer |
+| Agent Response | Green | Agent reply to PM |
+
+**Sweep message** — one row per company: Ticker · Finding badge (MATERIAL / INCREMENTAL / NONE) · Headline. Footer: agent's sector-level read.
+
+**Material Finding card** — amber left accent, company name, ticker, signal badge (↑ BULLISH / ⚠ WATCH / ↓ RISK), category, headline, detail, assessment (max 100 words).
+
+**Stats bar** — Companies · Bullish · Neutral · Bearish · Last Material date.
+
+**Right panel tabs** — Agent (designation, last sweep), Sector View (posture, stars, conviction, material count), Coverage (all companies with BULL/NEUT/BEAR badges). Plus **My Notes** showing PM's most recent logged view for this sector.
+
+**Composer** — multi-line textarea, auto-resize. Hint: `Tag: @Ticker · Log view: /view · Ask: /ask`. Enter sends, Shift+Enter newlines. On send: append PM message, show agent "Thinking…", stream reply.
+
+**Sidebar** — K株 brand mark, "SECTOR AGENT" sub-label. Seven channel items with colour-coded dot. Active sector: navy left border. Unread badge (red) for new material findings. PM footer with online status dot.
+
+---
+
+#### Database — New Tables
+
+Two new tables supplement the existing `sector_views` and `sector_log` tables. **Keep the existing tables** — they continue to be written and used for the sector view display. Add:
+
+```sql
+-- Sector agent persistent thread histories
+CREATE TABLE IF NOT EXISTS sector_agent_threads (
+    sector_key      TEXT PRIMARY KEY,
+    designation     TEXT NOT NULL,
+    thread_history  JSONB NOT NULL DEFAULT '[]',
+    message_count   INTEGER GENERATED ALWAYS AS (jsonb_array_length(thread_history)) STORED,
+    last_updated    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_sweep_at   TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_sat_designation ON sector_agent_threads(designation);
+
+-- Sector synthesis results (one row per sweep per sector)
+CREATE TABLE IF NOT EXISTS sector_syntheses (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sector_key        TEXT NOT NULL,
+    designation       TEXT NOT NULL,
+    posture           TEXT NOT NULL CHECK (posture IN ('bullish', 'neutral', 'bearish')),
+    conviction        NUMERIC(3,1) NOT NULL CHECK (conviction BETWEEN 0 AND 10),
+    thesis_summary    TEXT,
+    key_drivers       TEXT[],
+    key_risks         TEXT[],
+    company_signals   JSONB,
+    material_findings JSONB,
+    synthesised_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ss_sector_key ON sector_syntheses(sector_key);
+CREATE INDEX IF NOT EXISTS idx_ss_synthesised ON sector_syntheses(synthesised_at DESC);
+
+-- Seed thread rows for all 7 agents
+INSERT INTO sector_agent_threads (sector_key, designation) VALUES
+    ('au_enterprise_software',    'APEX'),
+    ('china_digital_consumption', 'ORIENT'),
+    ('dc_power_cooling',          'VOLT'),
+    ('india_it_services',         'INDRA'),
+    ('memory_semis',              'HELIX'),
+    ('networking_optics',         'PHOTON'),
+    ('semi_equipment',            'FORGE')
+ON CONFLICT (sector_key) DO NOTHING;
+```
+
+---
+
+#### API Routes
+
+Add to the Next.js API layer (or FastAPI if Python backend):
+
+**`GET /api/agents/status`** — returns status of all 7 agents: designation, sector name, company count, thread length, colour.
+
+**`POST /api/agents/sweep`**
+```json
+// body (omit sector_key to sweep all 7)
+{ "sector_key": "au_enterprise_software" }
+// response — sector synthesis object
+{ "designation": "APEX", "posture": "neutral", "conviction": 6.4, "thesis_summary": "...", ... }
+```
+
+**`POST /api/agents/chat`**
+```json
+{ "sector_key": "au_enterprise_software", "message": "What's driving the WTC re-rating?" }
+// response
+{ "reply": "..." }
+```
+
+After every chat and sweep, persist the thread:
+```typescript
+const thread = orchestrator.export_thread(sector_key);
+await db.save_thread_history(sector_key, thread);
+```
+
+---
+
+#### Sweep & Escalation Flow
+
+1. Orchestrator calls `SectorLeadAgent.run_daily_sweep()`
+2. Lead fans out to all CompanyCoverageAgents concurrently (`asyncio.gather`)
+3. Each CompanyCoverageAgent runs a web search sweep → returns structured JSON
+4. Lead identifies any `requires_escalation=True` finding
+5. Escalated companies get a deep-dive re-sweep at `effort="high"`
+6. Lead synthesises all findings into a sector view
+7. Sweep result and material findings appended to persistent thread
+8. Thread and synthesis saved to database
+
+**Cron schedule** — runs after all company sweep batches complete:
+```json
+{ "path": "/api/agents/sweep", "schedule": "0 22 * * *" }
+```
+`22:00 UTC` = `07:00 AEDT` — 30 min after the last company batch (as per existing schedule).
+
+---
+
+#### Implementation Notes
+
+- The agents are ready to converse from day one of deployment — no sweep history required. History accumulates from the first sweep onwards.
+- On startup, load thread histories from `sector_agent_threads` into each `SectorLeadAgent` via `load_thread_history(history)`.
+- The `sector_group` field on the `companies` table continues to be used for peer context injection into individual company sweeps (existing behaviour unchanged).
+- `sector_group` values for the 48 sector companies must map to the 7 `sector_key` values: `au_enterprise_software`, `china_digital_consumption`, `dc_power_cooling`, `india_it_services`, `memory_semis`, `networking_optics`, `semi_equipment`.
+
+**Navigation:** The "Sectors" nav button in the sticky toolbar must show only the monochrome SVG building icon — **remove the 🏭 emoji**. Search for `🏭` in the navigation component and delete it. Keep the SVG icon and the word "Sectors".
+
+---
+
+#### Mobile View — `/sectors` (Slack Mobile Pattern)
+
+The Sectors page must be fully usable on mobile. **Only the Sectors page requires mobile optimisation** — no other pages need mobile treatment. Use the Slack iOS/Android app as the design reference.
+
+**Breakpoint:** Apply mobile layout at `max-width: 768px`.
+
+**Core principle — single-pane navigation with bottom tab bar:**
+
+The three-pane desktop layout collapses into a single-pane view with a persistent bottom tab bar for switching between the three panels. This mirrors exactly how Slack mobile works: one pane visible at a time, bottom nav to switch.
+
+```
+┌─────────────────────────────┐
+│  ← APEX  [sector name]  ⋮  │  ← top bar: back arrow + active sector + overflow menu
+├─────────────────────────────┤
+│                             │
+│   [active pane content]     │
+│   Feed / Agent / Coverage   │
+│                             │
+│                             │
+│                             │
+│                             │
+│ ┌─────────────────────────┐ │
+│ │ 💬 Ask [APEX]...    ➤  │ │  ← composer, always visible above bottom nav
+│ └─────────────────────────┘ │
+├──────┬──────────┬───────────┤
+│  💬  │    🤖    │    📋     │  ← bottom tab bar
+│ Feed │  Agent   │ Coverage  │
+└──────┴──────────┴───────────┘
+```
+
+**Top bar:**
+- Left: `←` back chevron → taps to open the sector selector drawer (replaces desktop sidebar)
+- Centre: Active sector designation + name (e.g. "APEX · AU Enterprise Software")
+- Right: `⋮` overflow menu → Run Sweep, View Notes
+
+**Sector selector drawer:**
+- Slides in from the left on tap of `←` (standard Slack channel list pattern)
+- Full-height overlay showing all 7 sector channels with colour dot, name, company count, and unread badge
+- Tap any sector to switch and dismiss the drawer
+- Dismiss by swiping right or tapping outside
+
+**Bottom tab bar (3 tabs):**
+
+| Tab | Icon | Content |
+|---|---|---|
+| Feed | 💬 | The message feed — sweep cards, material findings, PM messages, agent replies |
+| Agent | 🤖 | Agent profile + current sector view (posture, conviction, thesis, key drivers/risks) |
+| Coverage | 📋 | Full company list with BULL/NEUT/BEAR badges, each tappable to company page |
+
+**Feed tab (default):**
+- Full-width scrollable message feed — same message types as desktop (Sweep, Material Finding, Sector View, PM, Agent Response)
+- Cards stack vertically, full width, with slightly reduced padding
+- Date dividers between days
+- Material Finding cards retain the amber left accent bar
+- Sweep cards collapse company rows behind a "Show all N companies" toggle to save vertical space — only Material and Incremental rows shown by default
+
+**Composer (always visible above bottom nav):**
+- Single-line input that expands to multi-line on focus
+- Placeholder: `Ask APEX...` (agent name changes per active sector)
+- Send button `➤` right-aligned
+- On send: appends PM message to feed, shows "Thinking…" indicator, streams agent reply
+- Supports `/view` and `/ask` prefix commands
+- No attach button on mobile — keep it simple
+
+**Agent tab:**
+- Agent avatar/icon, designation, sector name, last sweep timestamp
+- Posture badge (↑ Bullish / → Neutral / ↓ Bearish) + conviction stars
+- Thesis text (full, scrollable)
+- Key Drivers (up to 3) and Key Risks (up to 3) as compact list items
+- "My Notes" section at bottom — PM's most recent logged view for this sector
+
+**Coverage tab:**
+- Vertically stacked list (not grid) of all companies in the sector
+- Each row: Company name · Ticker · Signal badge (BULL / NEUT / BEAR)
+- Full-width tappable rows → navigate to company page
+- Stats bar at top: X Companies · X Bullish · X Neutral · X Bearish
+
+**Stats bar:**
+- Displayed as a compact horizontal scroll strip at the top of the Feed tab (below top bar)
+- 5 pills: Companies · Bullish · Neutral · Bearish · Last Material
+- Smaller font than desktop, no card borders — just inline pills
+
+**Typography & spacing on mobile:**
+- Reduce card padding from desktop values: `12px` horizontal, `10px` vertical
+- Font sizes: headlines `14px`, body `13px`, timestamps/labels `11px` IBM Plex Mono
+- Tap targets minimum `44px` height (iOS HIG standard)
+- No hover states — replace with tap/active states
+
+**Scroll behaviour:**
+- Feed, Agent, and Coverage tabs each scroll independently
+- Top bar and bottom tab bar are fixed — always visible
+- Composer is fixed above the bottom tab bar — never scrolls away
+
+**What to omit on mobile (not needed):**
+- Right panel tabs (replaced by bottom tab bar)
+- Desktop sidebar (replaced by drawer)
+- Attach button in composer
 
 ### Highest Conviction Top 20 (Portfolio Constructor Page)
 
@@ -2316,7 +2497,7 @@ kabuten-agentic/
 │   │       ├── executor.ts           # Main sweep orchestrator
 │   │       ├── podcast-processor.ts  # Podcast transcript fetch (Claude API web search primary → metacast.app optional → podscripts.co backup) + Claude analysis. 11 podcasts.
 │   │       ├── heatmap-collector.ts  # Keyword buzz scan via Claude API web search (primary) + optional Chrome MCP for enhanced X.com data
-│   │       ├── sector-agent.ts      # Sector Agent: collects company sweep results per sector, assesses sector-level materiality, updates sector views
+│   │       ├── sector-agent.ts      # Sector Agent cron trigger: calls KabutenOrchestrator.sweep_all() after company batches, persists thread histories
 │   │       └── fetchers/             # Data source fetchers
 │   │           ├── ir-page.ts        # Direct fetch with HTML stripping
 │   │           ├── edinet.ts         # EDINET API v2
@@ -2347,12 +2528,18 @@ kabuten-agentic/
 │       ├── EarningsModel.tsx         # Financial table with all columns populated. Source explanation text at bottom (consensus or AI-generated).
 │       ├── ValuationBox.tsx          # 5yr PER/PBR historical trading range (high/low/avg/current), decile gauge, historic returns table (company vs index), multiples, scenarios, fair value
 │       └── SharePriceChart.tsx       # TradingView widget embed (client component)
+├── agents/                           # Python multi-agent package (Sector Agent system)
+│   ├── __init__.py                   # Package exports
+│   ├── config.py                     # All 7 sector + 48 company definitions — SINGLE SOURCE OF TRUTH
+│   ├── company_agent.py              # CompanyCoverageAgent: sub-agent, structured JSON, web search, effort scaling
+│   ├── sector_agent.py               # SectorLeadAgent: orchestration, context compaction, persistent chat thread
+│   └── orchestrator.py               # KabutenOrchestrator: top-level manager, concurrent sweeps, chat routing
 ├── data/
 │   └── seed.json                     # Company data (230 companies): ticker, exchange, sector, country, classification, market_cap_usd, action log, earnings, valuation
 ├── package.json
 ├── tsconfig.json
 ├── next.config.ts
-└── vercel.json                       # Vercel config (27 staggered cron triggers for sweeps + portfolio; podcast + heatmap are manual)
+└── vercel.json                       # Vercel config (29 staggered cron triggers for sweeps + portfolio + sector agent; podcast + heatmap are manual)
 ```
 
 **Notes on file structure vs. original spec:**
@@ -2372,6 +2559,7 @@ kabuten-agentic/
 - Added 4 new API route groups: `ask/`, `podcasts/`, `heatmap/`, `auth/`
 - Added `portfolio.ts` — portfolio engine (top-20 selection, returns, rebalancing, NAV)
 - Added `TopConviction.tsx`, `PortfolioReturns.tsx`, `PortfolioDetails.tsx`, `PortfolioChangeLog.tsx` — portfolio components
+- Added `agents/` Python package — multi-agent sector system (APEX/ORIENT/VOLT/INDRA/HELIX/PHOTON/FORGE) with persistent threads, context compaction, and PM chat
 - Added `/portfolio` page route + `portfolio/` API route group (holdings, rebalance, snapshot)
 
 ---

@@ -195,6 +195,64 @@ export async function initializeDatabase() {
     )
   `;
 
+  // Sector agent persistent thread histories
+  await sql`
+    CREATE TABLE IF NOT EXISTS sector_agent_threads (
+      sector_key TEXT PRIMARY KEY,
+      designation TEXT NOT NULL,
+      thread_history JSONB NOT NULL DEFAULT '[]',
+      last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_sweep_at TIMESTAMPTZ
+    )
+  `;
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_sat_designation ON sector_agent_threads(designation)
+  `;
+
+  // Sector synthesis results (one row per sweep per sector)
+  await sql`
+    CREATE TABLE IF NOT EXISTS sector_syntheses (
+      id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      sector_key TEXT NOT NULL,
+      designation TEXT NOT NULL,
+      posture TEXT NOT NULL DEFAULT 'neutral',
+      conviction REAL NOT NULL DEFAULT 5.0,
+      thesis_summary TEXT,
+      key_drivers JSONB DEFAULT '[]',
+      key_risks JSONB DEFAULT '[]',
+      company_signals JSONB,
+      material_findings JSONB,
+      synthesised_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_ss_sector_key ON sector_syntheses(sector_key)
+  `;
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_ss_synthesised ON sector_syntheses(synthesised_at DESC)
+  `;
+
+  // Seed thread rows for all 7 agents
+  const agentSeeds = [
+    ['au_enterprise_software', 'APEX'],
+    ['china_digital_consumption', 'ORIENT'],
+    ['dc_power_cooling', 'VOLT'],
+    ['india_it_services', 'INDRA'],
+    ['memory_semis', 'HELIX'],
+    ['networking_optics', 'PHOTON'],
+    ['semi_equipment', 'FORGE'],
+  ];
+  for (const [key, designation] of agentSeeds) {
+    await sql`
+      INSERT INTO sector_agent_threads (sector_key, designation)
+      VALUES (${key}, ${designation})
+      ON CONFLICT (sector_key) DO NOTHING
+    `;
+  }
+
   return { success: true };
 }
 
@@ -862,7 +920,7 @@ export async function seedSectorGroups() {
     "Data-centre Power & Cooling": ["3324", "2308", "6501", "VST"],
     "India IT Services": ["INFY", "TCS", "TECHM", "WIPRO"],
     "Memory Semiconductors": ["285A", "MU", "005930", "SNDK", "STX", "000660"],
-    "Networking & Optics": ["2345", "CLS", "COHR", "FN", "LITE", "2382", "300394", "300308"],
+    "Networking & Optics": ["2345", "CLS", "COHR", "FN", "LITE", "300394", "300308"],
     "Semiconductor Production Equipment": [
       "688082", "6857", "AMAT", "3711", "ASML", "6146", "6361",
       "7741", "KLAC", "6525", "LRCX", "6920", "6323", "7735", "8035", "7729",
@@ -935,5 +993,92 @@ export async function getTodaySweepResultsForCompanies(companyIds: string[]) {
     WHERE al.company_id = ANY(${companyIds})
     AND al.timestamp::date = CURRENT_DATE
     ORDER BY al.timestamp DESC
+  `;
+}
+
+// ========== Sector Agent Thread functions ==========
+
+export async function getAllAgentThreads() {
+  const sql = getDb();
+  return sql`SELECT * FROM sector_agent_threads ORDER BY designation`;
+}
+
+export async function getAgentThread(sectorKey: string) {
+  const sql = getDb();
+  const rows = await sql`SELECT * FROM sector_agent_threads WHERE sector_key = ${sectorKey}`;
+  return rows[0] || null;
+}
+
+export async function saveAgentThread(sectorKey: string, threadHistory: unknown[]) {
+  const sql = getDb();
+  await sql`
+    UPDATE sector_agent_threads
+    SET thread_history = ${JSON.stringify(threadHistory)},
+        last_updated = NOW()
+    WHERE sector_key = ${sectorKey}
+  `;
+}
+
+export async function updateAgentSweepTime(sectorKey: string) {
+  const sql = getDb();
+  await sql`
+    UPDATE sector_agent_threads
+    SET last_sweep_at = NOW(),
+        last_updated = NOW()
+    WHERE sector_key = ${sectorKey}
+  `;
+}
+
+// ========== Sector Synthesis functions ==========
+
+export async function getLatestSynthesis(sectorKey: string) {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM sector_syntheses
+    WHERE sector_key = ${sectorKey}
+    ORDER BY synthesised_at DESC
+    LIMIT 1
+  `;
+  return rows[0] || null;
+}
+
+export async function getAllLatestSyntheses() {
+  const sql = getDb();
+  return sql`
+    SELECT DISTINCT ON (sector_key) *
+    FROM sector_syntheses
+    ORDER BY sector_key, synthesised_at DESC
+  `;
+}
+
+export async function insertSynthesis(entry: {
+  sectorKey: string;
+  designation: string;
+  posture: string;
+  conviction: number;
+  thesisSummary: string;
+  keyDrivers: string[];
+  keyRisks: string[];
+  companySignals: unknown;
+  materialFindings: unknown;
+}) {
+  const sql = getDb();
+  await sql`
+    INSERT INTO sector_syntheses (
+      sector_key, designation, posture, conviction,
+      thesis_summary, key_drivers, key_risks,
+      company_signals, material_findings
+    )
+    VALUES (
+      ${entry.sectorKey},
+      ${entry.designation},
+      ${entry.posture},
+      ${entry.conviction},
+      ${entry.thesisSummary},
+      ${JSON.stringify(entry.keyDrivers)},
+      ${JSON.stringify(entry.keyRisks)},
+      ${entry.companySignals ? JSON.stringify(entry.companySignals) : null},
+      ${entry.materialFindings ? JSON.stringify(entry.materialFindings) : null}
+    )
   `;
 }

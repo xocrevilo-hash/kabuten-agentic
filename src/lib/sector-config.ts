@@ -38,7 +38,7 @@ export const SECTORS: SectorDefinition[] = [
   {
     name: "Networking & Optics",
     label: "Networking & Optics",
-    companyIds: ["2345", "CLS", "COHR", "FN", "LITE", "2382", "300394", "300308"],
+    companyIds: ["2345", "CLS", "COHR", "FN", "LITE", "300394", "300308"],
   },
   {
     name: "Semiconductor Production Equipment",

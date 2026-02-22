@@ -29,6 +29,7 @@
     { "path": "/api/sweep/run?batch=27", "schedule": "20 21 * * *" },
     { "path": "/api/sweep/run?batch=28", "schedule": "30 21 * * *" },
     { "path": "/api/sweep/run?batch=29", "schedule": "40 21 * * *" },
-    { "path": "/api/sectors/sweep",       "schedule": "0 22 * * *" }
+    { "path": "/api/sectors/sweep",       "schedule": "0 22 * * *" },
+    { "path": "/api/agents/sweep",        "schedule": "0 22 * * *" }
   ]
 }
