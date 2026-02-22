@@ -1,13 +1,85 @@
 import { notFound } from "next/navigation";
 import InvestmentView from "@/components/InvestmentView";
 import SweepCriteria from "@/components/SweepCriteria";
-import ActionLog from "@/components/ActionLog";
+import { PaginatedActionLog } from "@/components/ActionLog";
 import SharePriceChart from "@/components/SharePriceChart";
 import EarningsModel from "@/components/EarningsModel";
 import ValuationBox from "@/components/ValuationBox";
-import { fetchCompany, fetchActionLog } from "@/lib/data";
+import { fetchCompany } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
+
+function NarrativeBox({ narrative }: { narrative: { earnings_trend?: string; recent_newsflow?: string; long_term_trajectory?: string } | null | undefined }) {
+  if (!narrative) return null;
+  const { earnings_trend, recent_newsflow, long_term_trajectory } = narrative;
+  if (!earnings_trend && !recent_newsflow && !long_term_trajectory) return null;
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Narrative</h2>
+        <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">AI-Estimated</span>
+      </div>
+      <div className="space-y-4">
+        {earnings_trend && (
+          <div className="border-l-4 pl-4" style={{ borderColor: "#3B82F6" }}>
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">📊 Earnings Trend (Past 3 Quarters):</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">{earnings_trend}</p>
+          </div>
+        )}
+        {recent_newsflow && (
+          <div className="border-l-4 pl-4" style={{ borderColor: "#3B82F6" }}>
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">📰 Recent Newsflow (Past 6 Months):</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">{recent_newsflow}</p>
+          </div>
+        )}
+        {long_term_trajectory && (
+          <div className="border-l-4 pl-4" style={{ borderColor: "#22C55E" }}>
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">🌐 Long-term Trajectory (3 Years):</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">{long_term_trajectory}</p>
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-gray-400 italic mt-4">Sources: Company filings, earnings releases, analyst reports</p>
+    </div>
+  );
+}
+
+function OutlookBox({ outlook }: { outlook: { fundamentals?: string; financials?: string; risks?: string } | null | undefined }) {
+  if (!outlook) return null;
+  const { fundamentals, financials, risks } = outlook;
+  if (!fundamentals && !financials && !risks) return null;
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Outlook</h2>
+        <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">AI-Estimated</span>
+      </div>
+      <div className="space-y-4">
+        {fundamentals && (
+          <div className="border-l-4 pl-4 py-2 rounded-r-lg" style={{ borderColor: "#22C55E", backgroundColor: "rgba(34, 197, 94, 0.05)" }}>
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">🏗 Fundamentals:</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">{fundamentals}</p>
+          </div>
+        )}
+        {financials && (
+          <div className="border-l-4 pl-4 py-2 rounded-r-lg" style={{ borderColor: "#EAB308", backgroundColor: "rgba(234, 179, 8, 0.05)" }}>
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">💰 Financials:</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">{financials}</p>
+          </div>
+        )}
+        {risks && (
+          <div className="border-l-4 pl-4 py-2 rounded-r-lg" style={{ borderColor: "#EF4444", backgroundColor: "rgba(239, 68, 68, 0.05)" }}>
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">⚠️ Risks:</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">{risks}</p>
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-gray-400 italic mt-4">Sources: Company filings, analyst reports, industry research</p>
+    </div>
+  );
+}
 
 export default async function CompanyPage({
   params,
@@ -21,10 +93,8 @@ export default async function CompanyPage({
     notFound();
   }
 
-  // Fetch full audit trail for this company (all severities, higher limit)
-  const actionLog = await fetchActionLog(ticker, 100);
-
-  const profile = company.profile_json;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const profile = company.profile_json as any;
   const criteria = company.sweep_criteria_json;
   const isJapanese = company.country === "Japan";
 
@@ -58,11 +128,12 @@ export default async function CompanyPage({
             lastUpdatedReason={profile.investment_view_detail?.last_updated_reason}
           />
 
-          {/* Right: Analyst Agent Log */}
-          <ActionLog
-            entries={actionLog}
+          {/* Right: Analyst Agent Log — paginated, full audit trail (all severities) */}
+          <PaginatedActionLog
             title={`Analyst Agent Log — ${company.name}`}
             showCompany={false}
+            companyId={company.id}
+            pageSize={50}
           />
         </div>
 
@@ -101,6 +172,12 @@ export default async function CompanyPage({
               )}
             </div>
           </div>
+
+          {/* Narrative Box — below Sweep Criteria, above Key Information */}
+          <NarrativeBox narrative={profile.narrative} />
+
+          {/* Outlook Box — below Narrative, above Key Information */}
+          <OutlookBox outlook={profile.outlook} />
 
           {/* Key Information */}
           <div className="rounded-xl border border-gray-200 bg-white p-6">

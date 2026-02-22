@@ -60,7 +60,63 @@ export async function POST(request: Request) {
         // Get current sector view
         const currentView = await getSectorView(sector.name);
 
-        // Synthesize with Claude
+        // INITIAL GENERATION: If no sector view exists, generate from member company profiles
+        if (!currentView) {
+          const { generateInitialSectorView } = await import("@/lib/claude");
+
+          const companyProfiles = sector.companyIds
+            .map((id) => companyMap[id])
+            .filter(Boolean)
+            .map((c) => ({
+              name: c.name as string,
+              ticker: c.ticker_full as string,
+              stance: (c.investment_view as string) || "neutral",
+              conviction: (c.conviction as string) || "medium",
+              thesis: ((c.profile_json as Record<string, unknown>)?.investment_view_detail as Record<string, unknown>)?.thesis_summary as string ||
+                      (c.profile_json as Record<string, unknown>)?.thesis as string || "",
+            }));
+
+          try {
+            const initialView = await generateInitialSectorView({
+              sectorName: sector.label,
+              companies: companyProfiles,
+            });
+
+            await upsertSectorView({
+              sectorName: sector.name,
+              stance: initialView.stance || "neutral",
+              conviction: initialView.conviction || "medium",
+              thesisSummary: initialView.thesis_summary || "",
+              valuationAssessment: initialView.valuation_assessment || [],
+              convictionRationale: initialView.conviction_rationale || [],
+              keyDrivers: initialView.key_drivers || [],
+              keyRisks: initialView.key_risks || [],
+              lastUpdatedReason: "Initial sector view generated",
+            });
+
+            await insertSectorLog({
+              sectorName: sector.name,
+              classification: "MATERIAL",
+              summary: `Initial sector view generated for ${sector.label}`,
+              relatedCompanies: companyProfiles.map((c) => c.name),
+              detailJson: null,
+            });
+
+            results.push({
+              sector: sector.name,
+              classification: "MATERIAL",
+              summary: `Initial sector view generated for ${sector.label}`,
+            });
+
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            continue;
+          } catch (err) {
+            console.error(`Failed to generate initial view for ${sector.name}:`, err);
+            // Fall through to normal synthesis
+          }
+        }
+
+        // Normal sector synthesis with today's sweep results
         const synthesis = await synthesizeSectorView({
           sectorName: sector.label,
           companies: sectorCompanies,

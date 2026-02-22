@@ -114,9 +114,9 @@ export default function PodcastTrackerPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Frozen header */}
+      {/* Frozen header — full width, sticky */}
       <div className="sticky top-10 z-20 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3">
+        <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-lg font-semibold text-gray-900">Podcast Tracker</h1>
             <div className="flex items-center gap-4">
@@ -147,67 +147,71 @@ export default function PodcastTrackerPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Podcasts Tracked reference table \u2014 top-left */}
-        <div className="mb-6 max-w-sm">
-          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/80">
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Podcasts Tracked ({TRACKED_PODCASTS.length})</h2>
-            </div>
-            <table className="w-full text-sm">
-              <tbody>
-                {TRACKED_PODCASTS.map((p, i) => (
-                  <tr key={p.name} className="border-b border-gray-50 last:border-0">
-                    <td className="px-4 py-1.5 text-gray-400 text-xs font-mono w-6">{i + 1}</td>
-                    <td className="py-1.5 text-gray-900 text-sm font-medium">{p.label}</td>
-                    <td className="px-4 py-1.5 text-gray-400 text-xs text-right">{p.focus}</td>
-                  </tr>
+      {/* Two-column layout */}
+      <div className="max-w-6xl mx-auto px-4 py-6 flex gap-6">
+        {/* Left column — Podcasts Tracked list (narrow, sticky) */}
+        <div className="w-[250px] flex-shrink-0">
+          <div className="sticky top-32">
+            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/80">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Podcasts Tracked ({TRACKED_PODCASTS.length})
+                </h2>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {[...TRACKED_PODCASTS].sort((a, b) => a.label.localeCompare(b.label)).map((p) => (
+                  <div key={p.name} className="px-4 py-2">
+                    <div className="text-sm font-medium text-gray-900">{p.label}</div>
+                    <div className="text-xs text-gray-400">{p.focus}</div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Fully expanded sequential log \u2014 newest first */}
-        <div className="space-y-4">
-          {sortedEpisodes.length > 0 ? (
-            sortedEpisodes.map((episode) => (
-              <div key={episode.id} className="rounded-xl border border-gray-200 bg-white p-5">
-                {/* Episode header */}
-                <div className="flex items-center gap-3 mb-2">
-                  <StatusIndicator status={episode.status} />
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {PODCAST_LABEL_MAP[episode.podcast_name] || episode.podcast_name}
-                  </span>
-                  {episode.episode_date && (
-                    <span className="text-xs text-gray-400 ml-auto whitespace-nowrap">{episode.episode_date}</span>
+        {/* Right column — Episode summaries (scrollable, reverse chronological) */}
+        <div className="flex-1 min-w-0">
+          <div className="space-y-4">
+            {sortedEpisodes.length > 0 ? (
+              sortedEpisodes.map((episode) => (
+                <div key={episode.id} className="rounded-xl border border-gray-200 bg-white p-5">
+                  {/* Episode header */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <StatusIndicator status={episode.status} />
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      {PODCAST_LABEL_MAP[episode.podcast_name] || episode.podcast_name}
+                    </span>
+                    {episode.episode_date && (
+                      <span className="text-xs text-gray-400 ml-auto whitespace-nowrap">{episode.episode_date}</span>
+                    )}
+                  </div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">{episode.episode_title}</h3>
+
+                  {/* Insights — always expanded */}
+                  {episode.insights_json && episode.insights_json.length > 0 ? (
+                    <div className="space-y-2 pl-4 border-l-2 border-gray-100">
+                      {episode.insights_json.map((insight, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">
+                            {insight.topic}
+                          </span>
+                          <p className="text-sm text-gray-700">{insight.insight}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">No insights extracted</p>
                   )}
                 </div>
-                <h3 className="text-sm font-medium text-gray-900 mb-3">{episode.episode_title}</h3>
-
-                {/* Insights \u2014 always expanded */}
-                {episode.insights_json && episode.insights_json.length > 0 ? (
-                  <div className="space-y-2 pl-4 border-l-2 border-gray-100">
-                    {episode.insights_json.map((insight, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">
-                          {insight.topic}
-                        </span>
-                        <p className="text-sm text-gray-700">{insight.insight}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-gray-400 italic">No insights extracted</p>
-                )}
+              ))
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-gray-400 mb-2">No podcast summaries yet</p>
+                <p className="text-xs text-gray-300">Click &quot;Run Podcast Scan&quot; to fetch and analyze latest episodes</p>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-gray-400 mb-2">No podcast summaries yet</p>
-              <p className="text-xs text-gray-300">Click &quot;Run Podcast Scan&quot; to fetch and analyze latest episodes</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

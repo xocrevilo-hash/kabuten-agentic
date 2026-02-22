@@ -241,10 +241,12 @@ export function PaginatedActionLog({
   title = "Analyst Agent Log",
   pageSize = 50,
   showCompany = true,
+  companyId,
 }: {
   title?: string;
   pageSize?: number;
   showCompany?: boolean;
+  companyId?: string;
 }) {
   const [entries, setEntries] = useState<ActionLogEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -257,7 +259,11 @@ export function PaginatedActionLog({
     setLoading(true);
     try {
       const offset = (p - 1) * pageSize;
-      const res = await fetch(`/api/action-log?limit=${pageSize}&offset=${offset}`);
+      let url = `/api/action-log?limit=${pageSize}&offset=${offset}`;
+      if (companyId) {
+        url += `&companyId=${encodeURIComponent(companyId)}`;
+      }
+      const res = await fetch(url);
       const data = await res.json();
       setEntries(data.entries || []);
       setTotal(data.total || 0);
@@ -266,7 +272,7 @@ export function PaginatedActionLog({
     } finally {
       setLoading(false);
     }
-  }, [pageSize]);
+  }, [pageSize, companyId]);
 
   useEffect(() => {
     fetchPage(page);

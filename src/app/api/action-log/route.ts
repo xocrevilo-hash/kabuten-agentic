@@ -10,11 +10,20 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    // Company-specific queries use the simple function (no pagination needed)
+    // Company-specific queries — paginated with all severities (full audit trail)
     if (companyId) {
-      const { getActionLog } = await import("@/lib/db");
-      const logs = await getActionLog(companyId, limit);
-      return NextResponse.json({ entries: logs, total: logs.length });
+      const { getCompanyActionLogPaginated } = await import("@/lib/db");
+      const { rows, total } = await getCompanyActionLogPaginated(companyId, limit, offset);
+      let entries = rows as Record<string, unknown>[];
+      if (search) {
+        const q = search.toLowerCase();
+        entries = entries.filter(
+          (log) =>
+            (log.summary as string)?.toLowerCase().includes(q) ||
+            (log.company_name as string)?.toLowerCase().includes(q)
+        );
+      }
+      return NextResponse.json({ entries, total });
     }
 
     // Paginated query excluding no_change

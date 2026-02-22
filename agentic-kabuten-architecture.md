@@ -339,7 +339,7 @@ Coverage spans Japan (TSE), Korea (KRX), Taiwan (TWSE), China (SSE/SZSE), Hong K
 | Backend/API | Next.js API routes |
 | Database | PostgreSQL via Neon (`@neondatabase/serverless`) |
 | AI Engine | Claude API (Anthropic) via `@anthropic-ai/sdk` — claude-sonnet-4-5-20250929 for daily sweeps, claude-opus-4-6 for deep analysis |
-| Scheduler | Vercel Cron Jobs — Staggered daily batches, 2:00–6:30 AM JST (29 cron triggers at 10-min intervals) |
+| Scheduler | Vercel Cron Jobs — **Non-US companies daily**, **US companies weekly (Sundays)**. Staggered batches, 2:00–6:30 AM JST (10-min intervals) |
 | Data Fetching | Native `fetch()` for IR pages + Claude API `web_search_20250305` tool for news/social/price/industry |
 | Deployment | Vercel (connected to GitHub repo) |
 | Source Control | GitHub |
@@ -495,11 +495,21 @@ Each agent sweeps the following sources daily:
 
 ### Daily Sweep Flow
 
+**Sweep frequency — cost optimisation:**
+- **Non-US companies (125 APAC):** Swept **daily** — more time-zone-sensitive news flow, less English-language coverage, daily sweeps add more value
+- **US companies (105):** Swept **once per week (Sundays)** — well-covered by English-language media, less incremental value from daily sweeps
+- This reduces weekly Claude API calls from 1,610 (230 × 7) to **980** (125 × 7 + 105 × 1) — a **~40% cost reduction**
+
+The sweep route checks each company's `country` field to determine if it should run today:
+- If `country === "US"` → only sweep on Sundays (or whatever day is configured)
+- If `country !== "US"` → sweep every day
+
 ```
 ┌─────────────────────────────────────────────────┐
 │              STAGGERED CRON TRIGGERS              │
-│  25 batches × 10-min intervals, 2:00–6:00 AM JST│
-│  Each batch: up to 8 companies (dynamic from DB)  │
+│  Daily: ~16 batches (125 non-US companies)       │
+│  Weekly (Sun): +14 batches (105 US companies)    │
+│  10-min intervals, 2:00 AM JST onwards           │
 │  ?batch=1 at 17:00 UTC, ?batch=2 at 17:10, ...   │
 └──────────────────────┬──────────────────────────┘
                        │
@@ -510,17 +520,23 @@ Each agent sweeps the following sources daily:
 │  1. Fetch latest data from all sources            │
 │  2. Load persistent company profile from DB       │
 │  3. Load Daily Sweep Criteria (focus prompts)     │
-│  4. Send to Claude API:                           │
+│  4. Load SECTOR PEER CONTEXT: query recent        │
+│     Incremental/Material findings from other      │
+│     companies in the same sector (last 7 days)    │
+│  5. Send to Claude API:                           │
 │     - System: "You are a senior equity analyst    │
 │       covering {company}. Your sweep criteria     │
 │       are: {criteria}."                           │
 │     - Context: company profile + new data         │
+│       + sector peer context                       │
 │     - Task: "Analyze new information. Determine   │
 │       if anything is material to the investment   │
-│       thesis. If yes, explain what changed and    │
+│       thesis. Consider recent findings from       │
+│       sector peers for cross-company signals.     │
+│       If yes, explain what changed and            │
 │       recommend any updates to the view."         │
-│  5. Parse Claude response                         │
-│  6. If material → update company profile + log    │
+│  6. Parse Claude response                         │
+│  7. If material → update company profile + log    │
 │     If not material → log "no change"             │
 └──────────────────────┬──────────────────────────┘
                        │
@@ -537,22 +553,65 @@ Sweeps are staggered to stay within Vercel's 5-minute serverless function timeou
 **How it works:**
 - Companies are loaded from the database, sorted by ID, and sliced into groups of 8 (`BATCH_SIZE = 8`)
 - Each cron trigger passes `?batch=N` — the route dynamically computes which companies belong to that batch
-- Empty batches (e.g. batch 25 when only 23 companies exist) return gracefully with no work done
+- **Before sweeping each company, the route checks sweep eligibility:**
+  - Non-US companies (`country !== "US"`) → eligible every day
+  - US companies (`country === "US"`) → eligible only on Sundays (configurable day)
+  - If a company is not eligible today, it is skipped (logged as "skipped — not scheduled today")
+- Empty batches return gracefully with no work done
 - Adding companies to the database automatically includes them in the next sweep cycle — no code changes needed
 
-**Scaling:**
+**Daily sweep load (typical weekday):**
 
-| Companies | Batches | Sweep window (JST) |
-|-----------|---------|-------------------|
-| 23 (current) | 3 | 2:00–2:20 AM |
-| 50 | 7 | 2:00–3:00 AM |
-| 100 | 13 | 2:00–4:00 AM |
-| 230 | 29 | 2:00–6:30 AM |
+| Segment | Companies | Batches | Sweep window (JST) |
+|---------|-----------|---------|-------------------|
+| Non-US (daily) | 125 | 16 | 2:00–4:30 AM |
+
+**Sunday sweep load (full universe):**
+
+| Segment | Companies | Batches | Sweep window (JST) |
+|---------|-----------|---------|-------------------|
+| All companies | 230 | 29 | 2:00–6:30 AM |
+
+**Weekly cost comparison:**
+- Old (all 230 daily): 230 × 7 = 1,610 Claude API calls/week
+- New (125 daily + 105 weekly): (125 × 7) + (105 × 1) = 980 Claude API calls/week
+- **Saving: ~40% reduction in token costs**
 
 **Sweep route modes:**
 - `?batch=N` — run batch N from DB (used by cron)
 - `?companyId=X` — run a single company (used by manual sweep button)
 - No params — run all companies sequentially (will timeout at scale)
+
+### Sector Peer Context (Cross-Company Intelligence)
+
+**v3.0 approach — reducing agent silos within the subagent model.**
+
+Each company agent operates independently, but receives context about recent findings from peer companies in the same sector. This enables cross-company signal detection without the overhead of a full multi-agent communication system.
+
+**How it works:**
+1. Each company has a `sector_group` field (e.g. "Memory Semiconductors") that maps to the Sector Agent groupings
+2. Before each company's sweep, the system queries the `action_log` for all **Incremental and Material** entries from companies in the same `sector_group` over the last 7 days
+3. These peer findings are formatted as a brief context block and injected into the sweep prompt as `{sector_peer_findings}`
+4. The agent is instructed to consider whether any peer findings have read-through implications for its own company
+
+**Example — Advantest sweep receives this peer context:**
+```
+SECTOR PEER CONTEXT — RECENT FINDINGS (Semiconductor Production Equipment, last 7 days):
+- Tokyo Electron (2026-02-11, MATERIAL): Arizona fab equipment orders from TSMC surging, FY guidance raised
+- ASML (2026-02-11, INCREMENTAL): High-NA EUV tool installations progressing at Intel
+- Disco Corp (2026-02-10, INCREMENTAL): Dicing demand for HBM packages increasing
+```
+The Advantest agent can now consider: "Tokyo Electron seeing surging orders from TSMC Arizona + Disco seeing HBM packaging demand → confirms broad semiconductor equipment upcycle → positive read-through for Advantest's HBM test platforms."
+
+**Peer context formatting rules:**
+- Include only Incremental 🟡 and Material 🔴 entries (not No Change)
+- Last 7 days only — keeps context fresh and token-efficient
+- Max 10 peer entries to cap token usage (prioritise Material over Incremental, newest first)
+- Format: `{company} ({date}, {classification}): {one-line summary}`
+
+**Token cost impact:** Adds approximately 200–400 tokens per sweep call. Marginal cost increase (~5%) for significantly better cross-company signal detection.
+
+**Future (v4.0 consideration):** Agent Teams architecture where company agents communicate directly during analysis, enabling real-time debate and collaborative thesis-building. This is architecturally different (requires Claude Code runtime, not Vercel cron) and significantly more expensive (~3–5× token cost). Parked for future evaluation.
 
 ### Materiality Assessment
 
@@ -608,7 +667,7 @@ The Kabuten homepage serves as the orchestrator's command center.
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────────┐│
 │  │  ANALYST AGENT LOG (AGGREGATED)                               ││
-│  │  Most recent 30 actions across all companies                  ││
+│  │  All Incremental & Material entries — paginated                  ││
 │  │  ┌──────────────────────────────────────────────────────────┐││
 │  │  │ 2026-02-06 07:14 | Disco Corp | 🟡 Incremental          │││
 │  │  │ Q3 orders above consensus — monitoring                   │││
@@ -616,7 +675,7 @@ The Kabuten homepage serves as the orchestrator's command center.
 │  │  │ 2026-02-06 07:15 | Advantest | 🔴 Material              │││
 │  │  │ New HBM test platform win at SK Hynix...                 │││
 │  │  └──────────────────────────────────────────────────────────┘││
-│  │  ... (showing most recent 30 of all actions)                  ││
+│  │  ... (all Incremental/Material entries — paginated)            ││
 │  └──────────────────────────────────────────────────────────────┘│
 │                                                                    │
 └──────────────────────────────────────────────────────────────────┘
@@ -755,6 +814,42 @@ Each company page is the agent's workspace and output display. Layout is **deskt
 │  └──────────────────────────────────────────────────────────────┘│
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────────┐│
+│  │  NARRATIVE                                    [AI-Estimated]  ││
+│  │                                                                ││
+│  │  ┃ 📊 Earnings Trend (Past 3 Quarters):                      ││
+│  │  ┃ (blue left border) Paragraph summarising recent            ││
+│  │  ┃ quarterly earnings trajectory and key trends               ││
+│  │                                                                ││
+│  │  ┃ 📰 Recent Newsflow (Past 6 Months):                       ││
+│  │  ┃ (blue left border) Key developments numbered               ││
+│  │  ┃ e.g. (1) Order intake surging; (2) New products...         ││
+│  │                                                                ││
+│  │  ┃ 🌐 Long-term Trajectory (3 Years):                        ││
+│  │  ┃ (green left border) Multi-year stock performance,          ││
+│  │  ┃ structural positioning, long-term growth thesis            ││
+│  │                                                                ││
+│  │  Sources: Company filings, earnings releases, analyst reports ││
+│  └──────────────────────────────────────────────────────────────┘│
+│                                                                    │
+│  ┌──────────────────────────────────────────────────────────────┐│
+│  │  OUTLOOK                                      [AI-Estimated]  ││
+│  │                                                                ││
+│  │  ┃ 🏗 Fundamentals:                                           ││
+│  │  ┃ (green left border) Business description, products,        ││
+│  │  ┃ key customers, market position, competitive moat           ││
+│  │                                                                ││
+│  │  ┃ 💰 Financials:                                             ││
+│  │  ┃ (yellow left border) Revenue, margins, valuation           ││
+│  │  ┃ multiples, balance sheet, dividends, FCF                   ││
+│  │                                                                ││
+│  │  ┃ ⚠️ Risks:                                                  ││
+│  │  ┃ (red left border) Key risk factors — cyclicality,          ││
+│  │  ┃ competition, regulation, concentration, macro              ││
+│  │                                                                ││
+│  │  Sources: Company filings, analyst reports, industry research ││
+│  └──────────────────────────────────────────────────────────────┘│
+│                                                                    │
+│  ┌──────────────────────────────────────────────────────────────┐│
 │  │  KEY INFORMATION                                              ││
 │  │  Market cap, P/E, etc.                                        ││
 │  └──────────────────────────────────────────────────────────────┘│
@@ -784,6 +879,7 @@ Each company page is the agent's workspace and output display. Layout is **deskt
 **Company Page Analyst Agent Log vs Homepage Agent Log — important distinction:**
 - The **company page** Analyst Agent Log (top-right box) shows **ALL daily sweep records** for that company — including No Change ⚪, Incremental 🟡, and Material 🔴. This gives the full audit trail of every sweep that ran.
 - The **homepage** Analyst Agent Log (and the dedicated `/agent-log` page) only shows **Incremental 🟡 and Material 🔴** entries. No Change ⚪ entries are excluded from the homepage to avoid clutter.
+- **No entry limit — show all entries with pagination.** The homepage Agent Log should display ALL Incremental and Material entries (not capped at 30 or any other number). Use pagination (e.g. 50 entries per page with page controls) so the user can browse the full history.
 - In other words: every sweep result is logged on the company page, but only noteworthy findings (Incremental or Material) get pushed up to the main homepage log.
 
 #### Earnings Model Specification
@@ -929,6 +1025,63 @@ US companies listed on NASDAQ use Nasdaq Composite; those on NYSE use S&P 500. A
 
 **Source attribution:** "Source: Yahoo Finance" displayed below the table.
 
+#### Narrative Box Specification
+
+A company research narrative box displayed on every company page, positioned below the Daily Sweep Criteria box. Provides backward-looking context on the company's recent performance and trajectory. Design matches the screenshot from Kabuten v2 exactly.
+
+**Visual design:**
+- White card with subtle border/shadow, rounded corners
+- Title "Narrative" in bold top-left, "AI-Estimated" badge in grey pill top-right
+- Three sub-sections, each with a coloured left border bar, emoji icon, and bold heading
+- Each sub-section contains a single paragraph of prose (not bullet points)
+- Sources footer at bottom in grey italic text
+
+**Sub-sections:**
+
+| # | Heading | Icon | Left Border | Content |
+|---|---------|------|-------------|---------|
+| 1 | **Earnings Trend (Past 3 Quarters):** | 📊 | Blue (`#3B82F6`) | Summary of recent quarterly earnings trajectory — revenue trends, margin direction, beats/misses, key drivers of recent results. Max 80 words. |
+| 2 | **Recent Newsflow (Past 6 Months):** | 📰 | Blue (`#3B82F6`) | Key developments numbered inline e.g. "(1) Order intake surging; (2) New products gaining traction; (3) Government subsidies..." Max 6 items, max 80 words total. |
+| 3 | **Long-term Trajectory (3 Years):** | 🌐 | Green (`#22C55E`) | Multi-year stock performance context, structural positioning, competitive standing, long-term growth thesis. Max 80 words. |
+
+**Sources footer:** "Sources: Company filings, earnings releases, analyst reports" — grey italic, bottom of box.
+
+#### Outlook Box Specification
+
+A forward-looking company research box displayed on every company page, immediately below the Narrative box. Provides fundamental analysis, financial summary, and risk assessment. Design matches the screenshot from Kabuten v2 exactly.
+
+**Visual design:**
+- White card with subtle border/shadow, rounded corners
+- Title "Outlook" in bold top-left, "AI-Estimated" badge in grey pill top-right
+- Three sub-sections, each with a coloured left border bar, emoji icon, and bold heading
+- Each sub-section contains a single paragraph of prose (not bullet points)
+- Sources footer at bottom in grey italic text
+
+**Sub-sections:**
+
+| # | Heading | Icon | Left Border | Background Tint | Content |
+|---|---------|------|-------------|-----------------|---------|
+| 1 | **Fundamentals:** | 🏗 | Green (`#22C55E`) | Light green | Business description, products/services, key customers, market position, competitive advantages, R&D intensity. Max 80 words. |
+| 2 | **Financials:** | 💰 | Yellow (`#EAB308`) | Light yellow | Revenue, operating profit, margins, valuation multiples (P/E), order book, balance sheet health, dividend yield, FCF generation. Max 80 words. |
+| 3 | **Risks:** | ⚠️ | Red (`#EF4444`) | Light red/pink | Key risk factors — cyclicality, geopolitical/regulatory, competition, customer concentration, currency, valuation. Max 80 words. |
+
+**Sources footer:** "Sources: Company filings, analyst reports, industry research" — grey italic, bottom of box.
+
+#### Narrative & Outlook — Data and Generation
+
+**Storage:** Both boxes are stored in the company's `profile_json` under two new keys:
+- `profile_json.narrative` — object with `earnings_trend`, `recent_newsflow`, `long_term_trajectory` (each a string)
+- `profile_json.outlook` — object with `fundamentals`, `financials`, `risks` (each a string)
+
+**Initial generation (smart first-run):** During each daily sweep, if `profile_json.narrative` OR `profile_json.outlook` is null/empty for a company, the sweep MUST generate both Narrative and Outlook boxes **regardless of the sweep classification** (even if NO_CHANGE). The system prompt for that sweep includes instructions to produce all 6 sub-sections based on the company's current Investment View and any new data. This ensures all 230 companies get populated on the first sweep cycle.
+
+**Subsequent updates:** Once both boxes are populated, Narrative and Outlook content is only refreshed when a **Material** sweep finding occurs — the same Claude API call that updates the Investment View also regenerates any Narrative/Outlook sub-sections affected by the material change. Incremental and No Change sweeps do NOT trigger updates to already-populated Narrative/Outlook boxes.
+
+**Content limits (enforced in system prompt):**
+- Each sub-section: max 80 words
+- Total Narrative box: ~240 words max
+- Total Outlook box: ~240 words max
+
 ### Analyst Agent Log Page (`/agent-log`)
 
 A dedicated full-page view of the Analyst Agent Log across all companies. **Only Incremental 🟡 and Material 🔴 entries are shown** — No Change ⚪ entries are excluded to keep the log focused on actionable findings.
@@ -937,8 +1090,8 @@ A dedicated full-page view of the Analyst Agent Log across all companies. **Only
 - **Search bar** at the top — searchable by ticker, company name, or theme/keyword (e.g. "HBM", "sanctions", "earnings")
 - **Full chronological list** of all Incremental and Material log entries (newest first), with color-coded severity indicators (🟡🔴)
 - Expandable entries — click to see full structured brief for incremental/material findings
-- Pagination or infinite scroll for long history
-- This is the long-form version of the aggregated log box shown on the homepage (which shows only the 30 most recent)
+- Pagination: show **100 entries per page** with page controls for browsing full history
+- This is the long-form version of the aggregated log box shown on the homepage (both show all Incremental/Material entries with pagination)
 
 ### Ask Kabuten Page (`/ask`)
 
@@ -1107,153 +1260,14 @@ Transcripts are fetched in priority order. No YouTube dependency.
 - If neither full transcript nor recap available: extract what's possible from episode title + description
 - Display message when Chrome MCP not connected: "Connect Chrome extension for full transcripts from metacast.app (optional)"
 
-**Layout — Sequential Log Format (no dropdowns):**
-- [Run Podcast Scan] button at top with last-scan timestamp
-- Search bar to filter by keyword across all extracted insights
-- **Frozen header**: The area above and including the search bar is **sticky/frozen** (`position: sticky`) so the Run button, timestamp, and search bar remain visible when scrolling through the log entries below
-- **"Podcasts Tracked" table (top-left):** A reference table titled **"Podcasts Tracked"** displayed in the **top-left** of the page (below the frozen header). Lists all 11 tracked podcast titles in **alphabetical order**. This is a static reference list so the user can see at a glance which podcasts are being scanned.
-- **No dropdown chevrons / expandable sections**: Each podcast episode summary is displayed **fully expanded** in a sequential log format, like a social media post thread
+**Layout — Two-column: Podcast list (left) + Episode log (right):**
+- **Frozen header**: Run Podcast Scan button + last-scan timestamp + search bar — sticky at top, visible on scroll
+- **Left column (narrow, ~250px):** "Podcasts Tracked" table listing all 11 tracked podcast titles in **alphabetical order**. Static reference list. Sticky within the column so it remains visible as the user scrolls through episodes on the right.
+- **Right column (wide, remaining width):** Sequential log of episode summaries in **reverse chronological order** (newest at top). Each episode displayed **fully expanded** — no dropdown chevrons or expandable sections. Like a social media post thread.
 - Each entry shows: podcast name, episode title, date, status indicator, and the full extracted insights (bullet points tagged by topic)
-- **Newest episodes at the top**, reverse chronological order — when new summaries are created from a scan, they are **added to the top** of the page, pushing older entries down
+- Search bar filters across all extracted insights on the right
 - Entries are visually separated like individual posts/cards in a feed — clear visual boundaries between each episode summary
 - Historical archive scrolls down — browse past episodes and their insights by scrolling
-
-### Sector Agent Page (`/sectors`)
-
-A single page with **tabbed navigation** for each sector. Each tab is powered by a dedicated Sector Agent that synthesises Daily Sweep data from the individual company agents within that sector to form and maintain a sector-level Investment View.
-
-**Concept:**
-1. Each Sector Agent covers a defined group of companies
-2. The Sector Agent does **not** conduct its own Daily Sweep — it does not search for news or data independently
-3. Instead, it **collects the Daily Sweep results** from each individual company agent in its group
-4. It formulates and maintains a **Sector Investment View** — similar in structure to individual company Investment Views
-5. After each daily sweep cycle completes, the Sector Agent compares the new company-level sweep data against its current Sector Investment View and decides whether to update it
-
-**Trigger: Automatic — runs after each daily sweep cycle completes**
-
-After the final batch of the daily sweep finishes (batch 29), the system automatically triggers all Sector Agents. Each Sector Agent:
-1. Loads its current Sector Investment View from the database
-2. Fetches today's Daily Sweep results for all companies in its group
-3. Sends the aggregated sweep data + current sector view to Claude API
-4. Claude assesses whether the new information changes the sector thesis
-5. Classifies as NO_CHANGE, INCREMENTAL, or MATERIAL (same framework as company agents)
-6. If MATERIAL: updates the Sector Investment View (escalated to Opus)
-7. Logs the result in the sector's agent log
-
-**Sectors and Companies:**
-
-| Sector | Tab Label | Companies |
-|--------|-----------|-----------|
-| Semicap | Semicap | Tokyo Electron, Disco, Advantest, Screen, Tokyo Seimitsu, Lasertec |
-| Memory | Memory | Samsung Electronics, Kioxia, Micron |
-| MLCC | MLCC | Murata, Taiyo Yuden, Samsung Electro-Mechanics |
-| Networking | Networking | Accton, Lumentum, Coherent, Fabrinet, Ciena, Zhongji Innolight, Eoptolink, Suzhou TFC |
-
-**Sector Investment View — same structure as company views:**
-- **Thesis summary** (max 100 words): Sector-level investment case
-- **Valuation assessment** (max 4 bullet points): Sector valuation context (average multiples, relative value across companies)
-- **Conviction rationale** (max 4 bullet points): Why conviction is at this level for the sector as a whole
-- Stance: Bullish / Neutral / Bearish
-- Conviction: High / Medium / Low
-
-**Sector Agent System Prompt:**
-
-```
-You are a senior equity research analyst covering the {sector_name} sector.
-
-Your role is to maintain an investment view on this sector by synthesising the daily sweep results from the individual company analysts who cover each company in your group.
-
-COMPANIES IN THIS SECTOR:
-{company_list_with_tickers}
-
-CURRENT SECTOR INVESTMENT VIEW:
-{sector_investment_view}
-
-TODAY'S DAILY SWEEP RESULTS FROM COMPANY AGENTS:
-{aggregated_sweep_results — classification, summary, and detail for each company}
-
-INSTRUCTIONS:
-1. Review today's sweep results from each company agent in your sector
-2. Assess whether the aggregated picture changes the sector thesis
-3. Look for sector-wide themes: are multiple companies seeing the same trend (e.g. order momentum, pricing pressure, demand shifts)?
-4. Classify the sector sweep as: NO_CHANGE, INCREMENTAL, or MATERIAL
-5. Apply a HIGH hurdle rate for MATERIAL — most days should be NO_CHANGE
-6. If MATERIAL, update the Sector Investment View with:
-   - Thesis summary (max 100 words)
-   - Valuation assessment (max 4 bullet points)
-   - Conviction rationale (max 4 bullet points)
-
-Respond in JSON format:
-{
-  "classification": "NO_CHANGE" | "INCREMENTAL" | "MATERIAL",
-  "summary": "One-line summary of sector sweep",
-  "detail": {
-    "sector_themes": "...",
-    "company_highlights": "...",
-    "valuation_context": "...",
-    "recommended_action": "..."
-  },
-  "suggested_sector_view_update": { ... } // only if MATERIAL
-}
-```
-
-**Layout — Single page with tabs:**
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  [Sticky nav toolbar]                                             │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                    │
-│  Sector Agent                                                      │
-│  Investment views across 4 tracked sectors                         │
-│                                                                    │
-│  ┌──────────┬──────────┬──────────┬──────────┐                    │
-│  │ Semicap  │ Memory   │ MLCC     │Networking│  ← tabs            │
-│  └──────────┴──────────┴──────────┴──────────┘                    │
-│                                                                    │
-│  ┌─────────────────────────────┐  ┌─────────────────────────────┐│
-│  │  SECTOR INVESTMENT VIEW     │  │  SECTOR AGENT LOG           ││
-│  │  (top-left)                 │  │  (top-right)                ││
-│  │  Stance, conviction,        │  │  History of sector sweep    ││
-│  │  thesis summary,            │  │  outcomes — all records     ││
-│  │  valuation assessment,      │  │  (No Change, Incremental,   ││
-│  │  conviction rationale       │  │  Material)                  ││
-│  └─────────────────────────────┘  └─────────────────────────────┘│
-│                                                                    │
-│  ┌──────────────────────────────────────────────────────────────┐│
-│  │  COMPANIES IN THIS SECTOR                                     ││
-│  │  Table: Company | Ticker | Latest Sweep | View | Conviction   ││
-│  │  Each company name clickable → links to company page          ││
-│  └──────────────────────────────────────────────────────────────┘│
-│                                                                    │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**Database — `sector_agents` table:**
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | SERIAL | Primary key |
-| sector_name | TEXT | Sector identifier (e.g. "Semicap", "Memory") |
-| companies | JSONB | Array of company tickers in this sector |
-| investment_view | JSONB | Current Sector Investment View (same structure as company views) |
-| last_sweep_at | TIMESTAMPTZ | Last time sector agent ran |
-| last_material_at | TIMESTAMPTZ | Last material finding |
-| created_at | TIMESTAMPTZ | Record creation |
-
-**Database — `sector_agent_log` table:**
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | SERIAL | Primary key |
-| sector_name | TEXT | Sector identifier |
-| sweep_date | DATE | Date of sweep |
-| classification | TEXT | NO_CHANGE, INCREMENTAL, or MATERIAL |
-| summary | TEXT | One-line summary |
-| detail_json | JSONB | Full structured detail |
-| created_at | TIMESTAMPTZ | Record creation |
-
-**Nav toolbar:** Add a "Sectors" button to the sticky navigation toolbar on all pages.
 
 ### Social Heatmap Page (`/heatmap`)
 
@@ -1371,14 +1385,21 @@ The Sector Agent does **not** conduct its own Daily Sweep. Instead, after the in
 
 **Sector definitions:**
 
-Sectors are user-defined groupings of companies from the 230-company coverage universe. Each company belongs to exactly one sector. The sector definitions are configured in a `sector-config.ts` file. Oliver defines which sectors exist and which companies belong to each.
+Sectors are user-defined groupings of companies from the 230-company coverage universe. Each company belongs to exactly one sector, defined by its `sector_group` field in the companies table. The sector definitions are configured in a `sector-config.ts` file. Oliver defines which sectors exist and which companies belong to each. The same `sector_group` field is used for both the Sector Agent page groupings and the sector peer context injected into individual company sweeps.
 
-**Placeholder sectors** (to be confirmed by Oliver):
-- Semiconductors
-- AI & Software
-- Cloud & Data
-- Hardware & Networking
-- Energy & Materials
+**Defined sectors (7 sectors, 49 companies):**
+
+| Sector | Companies | Count |
+|--------|-----------|-------|
+| Australia Enterprise Software | REA Group, Seek, WiseTech Global, Xero, Pro Medicus | 5 |
+| China Digital Consumption | Alibaba, Baidu, NetEase, Tencent, Tencent Music, Trip.com | 6 |
+| Data-centre Power & Cooling | Auras Technology, Delta Electronics, Hitachi, Vistra | 4 |
+| India IT Services | Infosys, TCS, Tech Mahindra, Wipro | 4 |
+| Memory Semiconductors | Kioxia, Micron, Samsung Electronics, SanDisk, Seagate, SK Hynix | 6 |
+| Networking & Optics | Accton Technology, Celestica, Coherent, Fabrinet, Lumentum, Sunny Optical, Suzhou TFC, Zhongji Innolight | 8 |
+| Semiconductor Production Equipment | ACM Research, Advantest, Applied Materials, ASE Technology, ASML, Disco, Ebara, Hoya, KLA, Kokusai Electric, Lam Research, Lasertec, Rorze, Screen Holdings, Tokyo Electron, Tokyo Seimitsu | 16 |
+
+**Note:** 181 companies have no `sector_group` assigned. They still receive individual sweeps and peer context is not injected for ungrouped companies. More sectors can be added later by assigning `sector_group` values to additional companies.
 
 **Sector Investment View** — same structure as company Investment Views but at sector level:
 - **Stance**: Bullish / Neutral / Bearish (on the sector)
@@ -1398,9 +1419,12 @@ Sectors are user-defined groupings of companies from the 230-company coverage un
 │  AI-driven sector views synthesised from individual company        │
 │  Daily Sweeps                                                      │
 │                                                                    │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐│
-│  │ Semis(15)│ │AI/SW (8) │ │Cloud (5) │ │HW/Net(5) │ │Energy(3)││
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └────────┘│
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐            │
+│  │AU Ent(5) │ │China D(6)│ │DC Pwr(4) │ │India(4)  │            │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘            │
+│  ┌──────────┐ ┌──────────┐ ┌──────────────┐                     │
+│  │Memory(6) │ │Net&Opt(8)│ │Semi Equip(16)│                     │
+│  └──────────┘ └──────────┘ └──────────────┘                     │
 │                                                                    │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────────┐│
 │  │Companies│ │ Bullish │ │ Neutral │ │ Bearish │ │Last Material││
@@ -1441,7 +1465,7 @@ Sectors are user-defined groupings of companies from the 230-company coverage un
 
 **Sector toggle buttons:**
 - Row of buttons at the top of the page, one per sector
-- Each button shows sector name and company count, e.g. "Semiconductors (15)"
+- Each button shows sector name and company count, e.g. "Memory Semiconductors (6)"
 - Active sector button is solid black with white text
 - Clicking a button switches the entire page content to that sector
 - Default: first sector selected on page load
@@ -1487,12 +1511,30 @@ Sectors are user-defined groupings of companies from the 230-company coverage un
 | created_at | TIMESTAMPTZ | Record creation time |
 
 **Implementation flow:**
-1. After all 29 daily sweep cron batches complete, a final cron trigger runs the Sector Agent
-2. For each defined sector, collect today's sweep results from `action_log` for companies in that sector
-3. Feed the collected results + current Sector Investment View to Claude API (Sonnet for routine, Opus if material)
+
+**Initial setup (one-time):**
+1. Add `sector_group` column to `companies` table
+2. Set `sector_group` for the 49 companies listed in the sector definitions table above
+3. Create `sector_views` and `sector_log` tables
+4. Create `sector-config.ts` with the 7 sector names
+
+**Initial Sector View generation (first run or empty `sector_views`):**
+When a sector has no existing view in `sector_views`, the Sector Agent must generate an initial view before the page can display anything. This runs automatically:
+1. For each sector in `sector-config.ts`, check if a row exists in `sector_views`
+2. If no row exists: load the current Investment Views (`profile_json`) for all member companies in that sector
+3. Feed all member company Investment Views to Claude API with prompt: "You are a senior sector analyst. Based on the individual company Investment Views below, generate an initial sector-level Investment View for the {sector_name} sector."
+4. Store the generated view in `sector_views` and log "Initial sector view generated" in `sector_log`
+5. This ensures the `/sectors` page is populated on first load — **it must not show an empty page**
+
+**Daily operation (after each sweep):**
+1. After all daily sweep cron batches complete, a final cron trigger runs the Sector Agent
+2. For each defined sector, collect today's sweep results from `action_log` for companies in that sector (filter by `sector_group`)
+3. Feed the collected results + current Sector Investment View from `sector_views` to Claude API (Sonnet for routine, Opus if material)
 4. Claude assesses whether sector-level conclusions have changed
 5. Store updated Sector Investment View in `sector_views` and log entry in `sector_log`
 6. Frontend reads from these tables to render the page
+
+**Critical: the Sector Agent cron trigger must run after ALL company sweep batches have completed.** Schedule it at least 30 minutes after the last company batch to ensure all results are in the database. For the current schedule (last non-US batch around 4:30 AM JST, last Sunday batch around 6:30 AM JST), schedule the Sector Agent at **7:00 AM JST daily** (22:00 UTC).
 
 **Navigation:** Add "🏭 Sectors" button to the sticky navigation toolbar on all pages.
 
@@ -1678,6 +1720,7 @@ The portfolio tracks USD-denominated total returns from inception:
 | market_cap_usd | REAL | Market cap in USD billions, refreshed during daily sweep via Yahoo Finance |
 | benchmark_index | TEXT | Yahoo Finance ticker for local market index (e.g. "^TPX", "^GSPC", "^KS11") |
 | sector | TEXT | Full sector/industry description |
+| sector_group | TEXT | Sector Agent group — maps to sectors on `/sectors` page. One of: "Australia Enterprise Software", "China Digital Consumption", "Data-centre Power & Cooling", "India IT Services", "Memory Semiconductors", "Networking & Optics", "Semiconductor Production Equipment". NULL for companies not assigned to a sector. Used for: (1) sector peer context in sweeps, (2) Sector Agent page groupings. |
 | profile_json | JSON | Full persistent company profile (thesis, model, valuation) |
 | sweep_criteria_json | JSON | Daily sweep criteria config |
 | investment_view | TEXT | Current view: "bullish" / "neutral" / "bearish" |
@@ -1806,10 +1849,17 @@ CURRENT THESIS & KEY ASSUMPTIONS:
 DAILY SWEEP CRITERIA — FOCUS AREAS:
 {sweep_criteria_bullets}
 
+SECTOR PEER CONTEXT — RECENT FINDINGS FROM YOUR SECTOR:
+{sector_peer_findings}
+(Recent Incremental and Material findings from other companies in the same sector, last 7 days.
+Use these to identify cross-company signals — e.g. a supply chain development at one company
+may have implications for peers. Flag any connections you see.)
+
 INSTRUCTIONS:
 1. Review the new information provided below
 2. Assess each item against the current thesis and focus areas
 3. Consider valuation implications — does new information change the earnings outlook or make the current valuation more/less attractive?
+4. Consider sector peer findings — do any recent developments at peer companies have read-through implications for this company?
 4. Classify the overall sweep as: NO_CHANGE, INCREMENTAL, or MATERIAL
 5. IMPORTANT: Apply a HIGH hurdle rate for MATERIAL classification. Most days should be NO_CHANGE. Information that merely confirms the existing thesis is INCREMENTAL at most, not MATERIAL. Only genuinely thesis-changing developments (major earnings surprises, structural competitive shifts, regulatory actions, management changes) qualify as MATERIAL. Price movements alone are never MATERIAL.
 6. RATING DISCIPLINE: High Conviction Buy (bullish + high conviction) is a rare rating — no more than ~10% of the 230-company coverage universe should hold this rating at any time. Apply the highest bar before recommending this rating. It requires: strong fundamentals, supportive valuation, identifiable catalysts, AND genuine confidence in the outcome.
@@ -1819,6 +1869,11 @@ INSTRUCTIONS:
    - A thesis summary (max 100 words)
    - A valuation assessment (max 4 bullet points)
    - A conviction rationale (max 4 bullet points explaining WHY conviction is at this level)
+9. If MATERIAL, also update the Narrative and Outlook boxes:
+   - **Narrative**: earnings_trend (max 80 words), recent_newsflow (max 80 words, numbered items), long_term_trajectory (max 80 words)
+   - **Outlook**: fundamentals (max 80 words), financials (max 80 words), risks (max 80 words)
+   - Only regenerate sub-sections affected by the material change — leave unchanged sub-sections as-is
+10. **FIRST-RUN RULE:** If the current Narrative or Outlook fields are empty/null (provided in context), you MUST generate all 6 sub-sections regardless of classification — even if NO_CHANGE. Base content on the current Investment View and company profile data.
 
 Respond in the following JSON format:
 {
@@ -1832,7 +1887,9 @@ Respond in the following JSON format:
     "confidence": "high" | "medium" | "low",
     "sources": ["..."]
   },
-  "suggested_profile_updates": { ... } // only if MATERIAL — must include valuation_assessment and conviction_rationale
+  "suggested_profile_updates": { ... }, // only if MATERIAL — must include valuation_assessment and conviction_rationale
+  "narrative_updates": { "earnings_trend": "...", "recent_newsflow": "...", "long_term_trajectory": "..." }, // if MATERIAL, or if current narrative is empty (first-run)
+  "outlook_updates": { "fundamentals": "...", "financials": "...", "risks": "..." } // if MATERIAL, or if current outlook is empty (first-run)
 }
 ```
 
@@ -1898,6 +1955,24 @@ During each daily sweep, the Investment View is assessed but only updated when m
   "catalysts": ["catalyst 1", "catalyst 2"],
   "last_updated": "2026-02-10T07:15:00Z",
   "last_updated_reason": "Material finding: HBM test platform win at SK Hynix"
+}
+```
+
+**Narrative content (stored in `profile_json.narrative`):**
+```json
+{
+  "earnings_trend": "Max 80 words — recent quarterly earnings trajectory",
+  "recent_newsflow": "Max 80 words — key developments numbered (1), (2), (3)...",
+  "long_term_trajectory": "Max 80 words — multi-year stock/business performance"
+}
+```
+
+**Outlook content (stored in `profile_json.outlook`):**
+```json
+{
+  "fundamentals": "Max 80 words — business description, products, market position",
+  "financials": "Max 80 words — revenue, margins, valuation, balance sheet",
+  "risks": "Max 80 words — key risk factors"
 }
 ```
 
@@ -2151,6 +2226,7 @@ The logo is the one standout visual element against the clean white design. It u
 - [ ] **Daily Sweep Criteria two-column layout** — Sources on the left column, Focus on the right column. Add [Edit] button to each Focus bullet point for inline editing. Sources shows ✖ (Pending) for Reddit, Bloomberg, Alphasense, Internal Research.
 - [ ] **Earnings model reformat** — New columns: Period, Revenue, Rev Growth, Op. Profit, Op. Margin, Net Profit, NP Margin, EPS, EPS Growth. **All columns must be populated with actual data.** Add source explanation text at bottom: consensus estimates preferred, AI-generated forecasts as fallback with methodology explanation.
 - [ ] **Valuation box upgrade** — 5-year PER/PBR historical trading range with high/low/average/current display + decile gauge visualization (cheap↔expensive vs history). Historic returns table (1D/1W/3M/1Y/3Y/5Y) showing company vs local index, refreshed daily via Yahoo Finance
+- [ ] **Narrative & Outlook boxes on company page** — Two new full-width boxes below Daily Sweep Criteria, above Key Information. **Narrative box:** three sub-sections with coloured left borders — 📊 Earnings Trend (blue), 📰 Recent Newsflow (blue), 🌐 Long-term Trajectory (green). "AI-Estimated" badge top-right. **Outlook box:** three sub-sections — 🏗 Fundamentals (green border, green tint), 💰 Financials (yellow border, yellow tint), ⚠️ Risks (red border, pink tint). "AI-Estimated" badge top-right. Each sub-section max 80 words. Stored in `profile_json.narrative` and `profile_json.outlook`. Generated on initial company setup, refreshed only on Material sweep findings. See Narrative Box Specification and Outlook Box Specification in architecture doc for exact design.
 - [ ] **Data sources update** — Reddit changed from Active to Pending (✖). All non-active sources labelled "(Pending)" instead of "Planned". Bloomberg, Alphasense, Internal Research all show ✖ (Pending).
 - [ ] **Homepage simplified** — Homepage shows hero logo, search bar, and aggregated Analyst Agent Log only. Company table and Top 20 moved to dedicated pages. **Every company name in the Analyst Agent Log must be a clickable link** to that company's page.
 - [ ] **Coverage Table market cap fix** — Market caps are currently **hardcoded static estimates** (all suspiciously round numbers like 3,400 / 200 / 180). Delete all static values and replace with **real live data** from Yahoo Finance `yfinance`. Validate a sample against known values. Show realistic precision (e.g. 3,487 not 3,400). Refresh during daily sweep.
@@ -2158,11 +2234,20 @@ The logo is the one standout visual element against the clean white design. It u
 - [ ] **Background wallpaper fresh start** — **Remove all existing wallpaper code first.** Then implement from scratch: very light grey 株天 kanji lines repeating across every page background **except the password landing page** (landing page gets plain white background). **Fix tiling bug:** current version has 株株 doubling at tile boundaries — the pattern must repeat seamlessly so every 株 is followed by 天 with no character doubling at seams. Use a long continuous 株天株天... string as the tile unit. Very light grey color (`#e0e0e0` or `rgba(0,0,0,0.07)`) — one shade lighter than current, should barely be visible. White opaque backgrounds on content boxes so wallpaper doesn't show inside them.
 - [ ] **Analyst Agent Log page** (`/agent-log`) — Full searchable history of all agent actions, search by ticker/company/theme
 - [ ] **Ask Kabuten page** (`/ask`) — **Fully wired and functional** Q&A interface. Two-column layout: **question history log on left sidebar** (all previous questions, newest first, clickable to reload Q&A, persisted in `ask_kabuten_log` DB table). Main Q&A area on right. Backend API route (`/api/ask/route.ts`) that queries DB + Claude API. Source toggle (Kabuten/Claude/Internet/All), sample questions.
-- [ ] **Podcast Tracker page** (`/podcasts`) — Manual [Run Podcast Scan] button triggers server-side Claude API web search + transcript analysis for **11** tracked podcasts (added: Semi Doped). **Button must work without Chrome MCP**. **No dropdown chevrons** — each episode summary displayed fully expanded in sequential log format like social media thread. Newest at top — new summaries added to the top of the page. **Frozen header** (Run button + search bar sticky on scroll). Add **"Podcasts Tracked" table** in top-left listing all 11 podcast titles alphabetically.
-- [ ] **Sector Agent page** (`/sectors`) — New page. Single page with toggle buttons per sector. Sector Agent runs automatically after daily sweeps complete — collects company sweep results and synthesises sector-level Investment View. Create `sector_views` and `sector_log` tables. Frontend matches `sector-agent-mockup.html` design. Add "🏭 Sectors" to nav toolbar. Sector definitions configured in `sector-config.ts`.
+- [ ] **Podcast Tracker page** (`/podcasts`) — Manual [Run Podcast Scan] button triggers server-side Claude API web search + transcript analysis for **11** tracked podcasts (added: Semi Doped). **Button must work without Chrome MCP**. **No dropdown chevrons** — each episode summary displayed fully expanded in sequential log format like social media thread. Newest at top — new summaries added to the top of the page. **Frozen header** (Run button + search bar sticky on scroll). **Two-column layout:** "Podcasts Tracked" list on the **left** (narrow, sticky, alphabetical), episode summaries log on the **right** (wide, scrollable, reverse chronological).
+- [ ] **Sector Agent page** (`/sectors`) — New page. Implementation steps:
+  1. **Add `sector_group` column** to `companies` table if not present (TEXT, nullable)
+  2. **Seed sector_group values** for the 49 companies listed in the sector definitions table (see Sector Agent Page section). Set `sector_group` for each company to match exactly: "Australia Enterprise Software", "China Digital Consumption", "Data-centre Power & Cooling", "India IT Services", "Memory Semiconductors", "Networking & Optics", "Semiconductor Production Equipment". The remaining 181 companies get `sector_group = NULL`.
+  3. **Create `sector-config.ts`** listing all 7 sector names — this is the master list of active sectors
+  4. **Create `sector_views` and `sector_log` database tables** (schemas in architecture doc)
+  5. **Build Sector Agent cron trigger** — a final cron trigger that runs AFTER all company sweep batches complete. For each sector in `sector-config.ts`: query today's sweep results from `action_log` for companies with matching `sector_group`, feed to Claude API with current sector view, store updated view in `sector_views` and log in `sector_log`
+  6. **Build frontend** — single page with toggle buttons per sector, matching `sector-agent-mockup.html` design. Two-column layout (Sector Investment View + Sector Agent Log), stats row, companies grid. Page reads from `sector_views` and `sector_log` tables.
+  7. **Generate initial Sector Investment Views** — on first run (or if `sector_views` is empty for a sector), Claude generates an initial sector view by reading the current Investment Views of all member companies. This ensures the page is populated after the first sweep.
+  8. **Add "🏭 Sectors" to nav toolbar** on all pages
 - [ ] **Social Heatmap page** (`/heatmap`) — **REBUILD FROM SCRATCH.** Existing implementation is broken. New methodology: **Chrome MCP required** (no fallback). Scan navigates X.com search for each of 40 keywords, reads view counts from top 3 posts, compares against 7-day rolling average to compute heat score (0–100). Button disabled when Chrome MCP not connected. Create `heatmap_snapshots` table, build API routes (`/api/heatmap/record`, `/api/heatmap/results`), build frontend matching `heatmap-mockup.html` design. See full methodology in Heatmap section.
 - [ ] **Logo enhancement** — More 3D depth, enhanced metallic effect, background shading
-- [ ] **Seed all 230 companies** — Build seed.json entries for all 230 companies listed in the Coverage section (105 US + 125 APAC), with ticker, exchange, sector, profile, market_cap_usd, country, classification, and sweep criteria. Update SearchBar to load from DB.
+- [ ] **Seed all 230 companies** — Build seed.json entries for all 230 companies listed in the Coverage section (105 US + 125 APAC), with ticker, exchange, sector, **sector_group**, profile, market_cap_usd, country, classification, and sweep criteria. Every company must have a `sector_group` value matching a sector defined in `sector-config.ts`. Update SearchBar to load from DB.
+- [ ] **Sector peer context in sweeps** — Before each company's sweep, query `action_log` for Incremental/Material entries from companies in the same `sector_group` (last 7 days, max 10 entries). Inject as `{sector_peer_findings}` in the sweep prompt. See "Sector Peer Context" section for full spec.
 - [ ] **Highest Conviction Top 20** — Moved to **Portfolio Constructor page** (not homepage). Ranked list of top 20 bullish ideas. Must be populated with current high conviction buy rated stocks.
 - [ ] **Portfolio Constructor page** (`/portfolio`) — Top 20 list at top of page, then portfolio returns + Kabuten View, then holdings detail, change log, and chat. Make sure all data on the page is working. Model portfolio tracking top 20 ideas: equal-weighted long-only, USD-denominated, no rebalancing. Daily NAV snapshots via cron. Agent-driven rebalancing when views change.
 - [ ] Deploy all Phase 5 features to Vercel
@@ -2190,7 +2275,7 @@ kabuten-agentic/
 │   │   ├── heatmap/
 │   │   │   └── page.tsx              # Social Heatmap page
 │   │   ├── sectors/
-│   │   │   └── page.tsx              # Sector Agent page (tabbed: Semicap, Memory, MLCC, Networking)
+│   │   │   └── page.tsx              # Sector Agent page (7 sectors with toggle buttons)
 │   │   ├── portfolio/
 │   │   │   └── page.tsx              # Portfolio Constructor page
 │   │   └── api/
@@ -2296,9 +2381,9 @@ kabuten-agentic/
 1. **Claude API web search** — Uses `web_search_20250305` tool with `max_uses: 3` and `max_tokens: 2048` per call. Web search fetchers run sequentially with 2s delays to stay within rate limits (30k input tokens/min). Content truncated to ~4000 chars per source before analysis.
 2. **IR page scraping** — Resolved: lightweight `fetch()` with HTML tag stripping. Puppeteer is incompatible with Vercel serverless. IR page URLs are hardcoded per company in `ir-page.ts`.
 3. **Twitter/X data** — Resolved: using Claude API web search only (no MCP integration). Searches for recent tweets/posts about each company.
-4. **Cost management** — Resolved: sequential web search fetchers, content truncation, conservative token limits. Sweeps are staggered across batches of 8 companies to stay within Vercel's 5-minute serverless timeout. Architecture supports 230 companies with 29 pre-configured cron triggers.
+4. **Cost management** — Resolved: sequential web search fetchers, content truncation, conservative token limits. **Sweep frequency split: non-US companies (125) swept daily, US companies (105) swept weekly (Sundays only) — ~40% cost reduction.** Sweeps are staggered across batches of 8 companies to stay within Vercel's 5-minute serverless timeout. Investment View content limits enforced: thesis 100 words, valuation 4 bullets, key drivers 3 bullets, key risks 3 bullets, conviction rationale 4 bullets.
 5. **Profile evolution** — The persistent company profile is stored as `profile_json` in the database. Currently manageable size. Strategy for summarization/compression to be implemented if profiles grow beyond context limits.
-6. **Vercel deployment** — GitHub repo connected to Vercel. Environment variables (ANTHROPIC_API_KEY, DATABASE_URL) configured in Vercel dashboard. 27 staggered cron triggers at 10-min intervals (17:00 UTC–21:30 UTC, i.e. 2:00–6:30 AM JST) each hitting `GET /api/sweep/run?batch=N`. Dynamic batching: companies are loaded from DB, sorted by ID, sliced into groups of 8.
+6. **Vercel deployment** — GitHub repo connected to Vercel. Environment variables (ANTHROPIC_API_KEY, DATABASE_URL) configured in Vercel dashboard. 29 staggered cron triggers at 10-min intervals (17:00 UTC onwards, i.e. 2:00 AM JST onwards) each hitting `GET /api/sweep/run?batch=N`. Dynamic batching: companies are loaded from DB, sorted by ID, sliced into groups of 8. **Sweep frequency: non-US companies daily, US companies Sundays only.** The sweep route checks each company's country field to determine eligibility on a given day.
 7. **Database** — Using Neon Postgres via `@neondatabase/serverless`. `@vercel/postgres` is deprecated. Neon integration set up via Vercel dashboard (requires accepting terms manually). Seed data fallback pattern ensures app works without DATABASE_URL.
 8. **JSON parsing** — Claude API frequently wraps JSON responses in markdown code fences. All parsers include regex fallback: `rawText.match(/\{[\s\S]*\}/)`.
 

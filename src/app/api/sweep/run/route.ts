@@ -15,7 +15,16 @@ const BATCH_SIZE = 8; // Max companies per batch (~30s each = ~4 min)
  *
  * 230 companies = 29 batches × 10 min spacing = 2:00–6:50 AM JST
  */
-async function getCompanyBatch(batchNum: number): Promise<{ ids: string[]; totalBatches: number; totalCompanies: number }> {
+interface BatchCompany {
+  id: string;
+  country: string | null;
+}
+
+async function getCompanyBatch(batchNum: number): Promise<{
+  companies: BatchCompany[];
+  totalBatches: number;
+  totalCompanies: number;
+}> {
   const companies = await getCompanies();
   // Sort deterministically by ID so batches are stable
   const sorted = companies.sort((a, b) => a.id.localeCompare(b.id));
@@ -24,9 +33,25 @@ async function getCompanyBatch(batchNum: number): Promise<{ ids: string[]; total
 
   const start = (batchNum - 1) * BATCH_SIZE;
   const end = Math.min(start + BATCH_SIZE, totalCompanies);
-  const ids = sorted.slice(start, end).map((c) => c.id);
+  const batch = sorted.slice(start, end).map((c) => ({
+    id: c.id as string,
+    country: (c.country as string) || null,
+  }));
 
-  return { ids, totalBatches, totalCompanies };
+  return { companies: batch, totalBatches, totalCompanies };
+}
+
+/**
+ * Check if a company is eligible for sweep today.
+ * US companies only sweep on Sundays (day 0 in UTC).
+ * Non-US companies sweep every day.
+ */
+function isEligibleToday(country: string | null): boolean {
+  if (country === "US") {
+    const today = new Date();
+    return today.getUTCDay() === 0; // Sunday = 0
+  }
+  return true; // Non-US companies sweep daily
 }
 
 /**
@@ -67,9 +92,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Invalid batch number" }, { status: 400 });
       }
 
-      const { ids, totalBatches, totalCompanies } = await getCompanyBatch(batchNum);
+      const { companies: batchCompanies, totalBatches, totalCompanies } = await getCompanyBatch(batchNum);
 
-      if (ids.length === 0) {
+      if (batchCompanies.length === 0) {
         return NextResponse.json({
           success: true,
           timestamp: new Date().toISOString(),
@@ -82,7 +107,23 @@ export async function POST(request: Request) {
         });
       }
 
-      const results = await runSweepBatch(ids);
+      // Filter by sweep eligibility (US = Sundays only, non-US = daily)
+      const eligible = batchCompanies.filter((c) => isEligibleToday(c.country));
+      const skipped = batchCompanies.filter((c) => !isEligibleToday(c.country));
+
+      const skippedResults = skipped.map((c) => ({
+        companyId: c.id,
+        companyName: c.id,
+        status: "skipped" as const,
+        classification: undefined,
+        summary: "skipped — not scheduled today (US companies sweep on Sundays only)",
+        durationMs: 0,
+      }));
+
+      const sweepResults = eligible.length > 0
+        ? await runSweepBatch(eligible.map((c) => c.id))
+        : [];
+
       return NextResponse.json({
         success: true,
         timestamp: new Date().toISOString(),
@@ -90,8 +131,10 @@ export async function POST(request: Request) {
         batch: batchNum,
         totalBatches,
         totalCompanies,
-        batchSize: ids.length,
-        results,
+        batchSize: batchCompanies.length,
+        eligible: eligible.length,
+        skipped: skipped.length,
+        results: [...sweepResults, ...skippedResults],
       });
     }
 

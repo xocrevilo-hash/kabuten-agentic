@@ -60,6 +60,7 @@ export async function initializeDatabase() {
   await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS classification TEXT`;
   await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS market_cap_usd REAL`;
   await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS benchmark_index TEXT`;
+  await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS sector_group TEXT`;
 
   // Phase 5: Podcast episodes table
   await sql`
@@ -808,6 +809,82 @@ export async function insertSectorLog(entry: {
       ${entry.detailJson ? JSON.stringify(entry.detailJson) : null}
     )
   `;
+}
+
+/**
+ * Seed sector_group values for the 49 companies across 7 defined sectors.
+ * Safe to run multiple times — uses UPDATE with WHERE.
+ */
+export async function seedSectorGroups() {
+  const sql = getDb();
+
+  const sectorMap: Record<string, string[]> = {
+    "Australia Enterprise Software": ["REA", "SEK", "WTC", "XRO", "PME"],
+    "China Digital Consumption": ["9988", "BIDU", "NTES", "0700", "TME", "TCOM"],
+    "Data-centre Power & Cooling": ["3324", "2308", "6501", "VST"],
+    "India IT Services": ["INFY", "TCS", "TECHM", "WIPRO"],
+    "Memory Semiconductors": ["285A", "MU", "005930", "SNDK", "STX", "000660"],
+    "Networking & Optics": ["2345", "CLS", "COHR", "FN", "LITE", "2382", "300394", "300308"],
+    "Semiconductor Production Equipment": [
+      "688082", "6857", "AMAT", "3711", "ASML", "6146", "6361",
+      "7741", "KLAC", "6525", "LRCX", "6920", "6323", "7735", "8035", "7729",
+    ],
+  };
+
+  for (const [sectorGroup, companyIds] of Object.entries(sectorMap)) {
+    for (const companyId of companyIds) {
+      await sql`
+        UPDATE companies SET sector_group = ${sectorGroup} WHERE id = ${companyId}
+      `;
+    }
+  }
+
+  return { success: true, companiesUpdated: 49 };
+}
+
+/**
+ * Get recent Incremental/Material findings from peer companies in the same sector_group.
+ * Used for sector peer context injection in sweeps.
+ * Returns max 10 entries, prioritising Material over Incremental, newest first.
+ */
+export async function getSectorPeerFindings(sectorGroup: string, excludeCompanyId: string) {
+  const sql = getDb();
+  return sql`
+    SELECT al.summary, al.severity, al.timestamp, c.name as company_name
+    FROM action_log al
+    JOIN companies c ON al.company_id = c.id
+    WHERE c.sector_group = ${sectorGroup}
+    AND al.company_id != ${excludeCompanyId}
+    AND al.severity IN ('incremental', 'material')
+    AND al.timestamp >= NOW() - INTERVAL '7 days'
+    ORDER BY
+      CASE WHEN al.severity = 'material' THEN 0 ELSE 1 END,
+      al.timestamp DESC
+    LIMIT 10
+  `;
+}
+
+/**
+ * Get paginated action log for a specific company (including all severities for full audit trail).
+ */
+export async function getCompanyActionLogPaginated(companyId: string, limit: number, offset: number) {
+  const sql = getDb();
+  const [rows, countResult] = await Promise.all([
+    sql`
+      SELECT al.*, c.name as company_name
+      FROM action_log al
+      JOIN companies c ON al.company_id = c.id
+      WHERE al.company_id = ${companyId}
+      ORDER BY al.timestamp DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `,
+    sql`
+      SELECT COUNT(*)::int as total
+      FROM action_log
+      WHERE company_id = ${companyId}
+    `,
+  ]);
+  return { rows, total: countResult[0].total as number };
 }
 
 export async function getTodaySweepResultsForCompanies(companyIds: string[]) {

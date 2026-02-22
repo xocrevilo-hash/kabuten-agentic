@@ -1,4 +1,4 @@
-import { getCompanies, getCompany, insertActionLog, updateCompanyAfterSweep, insertSweepData, getLatestSweepData, updateCompanyMarketCap } from "@/lib/db";
+import { getCompanies, getCompany, insertActionLog, updateCompanyAfterSweep, insertSweepData, getLatestSweepData, updateCompanyMarketCap, getSectorPeerFindings } from "@/lib/db";
 import { analyzeSweep, deepAnalysis, type SweepResult } from "@/lib/claude";
 import { fetchIRPage } from "./fetchers/ir-page";
 import { fetchNews } from "./fetchers/news";
@@ -117,6 +117,8 @@ async function sweepCompany(companyId: string): Promise<SweepLog> {
       thesis: string;
       key_assumptions: string[];
       risk_factors: string[];
+      narrative?: Record<string, string> | null;
+      outlook?: Record<string, string> | null;
     };
     const criteria = company.sweep_criteria_json as {
       sources: string[];
@@ -136,7 +138,6 @@ async function sweepCompany(companyId: string): Promise<SweepLog> {
     const priceData = fetchedData.find((d) => d.source === "tradingview");
     if (priceData?.content) {
       try {
-        // Look for market cap patterns in the price data content
         const mcMatch = priceData.content.match(/market\s*cap[:\s]*\$?([\d,.]+)\s*(trillion|billion|T|B)/i);
         if (mcMatch) {
           let mcValue = parseFloat(mcMatch[1].replace(/,/g, ""));
@@ -147,7 +148,26 @@ async function sweepCompany(companyId: string): Promise<SweepLog> {
           }
         }
       } catch {
-        // Non-critical — don't fail sweep if market cap extraction fails
+        // Non-critical
+      }
+    }
+
+    // Fetch sector peer context if company has a sector_group
+    let sectorPeerFindings: string | undefined;
+    const sectorGroup = company.sector_group as string | null;
+    if (sectorGroup) {
+      try {
+        const peerEntries = await getSectorPeerFindings(sectorGroup, companyId);
+        if (peerEntries.length > 0) {
+          sectorPeerFindings = peerEntries
+            .map((e: Record<string, unknown>) => {
+              const date = new Date(e.timestamp as string).toISOString().split("T")[0];
+              return `${e.company_name} (${date}, ${e.severity}): ${e.summary}`;
+            })
+            .join("\n");
+        }
+      } catch {
+        // Non-critical — continue without peer context
       }
     }
 
@@ -156,7 +176,7 @@ async function sweepCompany(companyId: string): Promise<SweepLog> {
       .filter((d) => d.isNew)
       .map((d) => ({ source: d.source, content: d.content }));
 
-    // Step 2: Analyze with Claude
+    // Step 2: Analyze with Claude (includes peer context and narrative/outlook for first-run)
     const sweepResult: SweepResult = await analyzeSweep({
       companyName: company.name,
       ticker: company.ticker_full,
@@ -167,6 +187,9 @@ async function sweepCompany(companyId: string): Promise<SweepLog> {
       riskFactors: profile.risk_factors,
       sweepFocus: criteria.focus,
       newData,
+      sectorPeerFindings,
+      currentNarrative: profile.narrative,
+      currentOutlook: profile.outlook,
     });
 
     // Step 3: Map classification to severity
@@ -179,7 +202,7 @@ async function sweepCompany(companyId: string): Promise<SweepLog> {
     const severity = severityMap[sweepResult.classification] || "no_change";
 
     // Step 4: If material, run deep analysis with Opus
-    let updatedProfile = null;
+    let updatedProfile: Record<string, unknown> | null = null;
     if (sweepResult.classification === "MATERIAL") {
       try {
         const deep = await deepAnalysis({
@@ -190,9 +213,25 @@ async function sweepCompany(companyId: string): Promise<SweepLog> {
         });
         updatedProfile = deep.updatedProfile;
       } catch {
-        // Deep analysis failure shouldn't block the sweep
         console.error(`Deep analysis failed for ${companyId}, continuing with sweep result`);
       }
+    }
+
+    // Step 4b: Handle narrative and outlook updates from sweep response
+    const rawResult = sweepResult as unknown as Record<string, unknown>;
+    const narrativeUpdates = rawResult.narrative_updates as Record<string, string> | null;
+    const outlookUpdates = rawResult.outlook_updates as Record<string, string> | null;
+
+    if (narrativeUpdates || outlookUpdates) {
+      // Merge narrative/outlook into profile — either the deep-updated profile or the current one
+      const baseProfile = (updatedProfile || company.profile_json) as Record<string, unknown>;
+      if (narrativeUpdates) {
+        baseProfile.narrative = narrativeUpdates;
+      }
+      if (outlookUpdates) {
+        baseProfile.outlook = outlookUpdates;
+      }
+      updatedProfile = baseProfile;
     }
 
     // Step 5: Write to action log

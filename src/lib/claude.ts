@@ -73,6 +73,9 @@ export async function analyzeSweep(opts: {
   riskFactors: string[];
   sweepFocus: string[];
   newData: { source: string; content: string }[];
+  sectorPeerFindings?: string;
+  currentNarrative?: Record<string, string> | null;
+  currentOutlook?: Record<string, string> | null;
 }): Promise<SweepResult> {
   const {
     companyName,
@@ -84,7 +87,18 @@ export async function analyzeSweep(opts: {
     riskFactors,
     sweepFocus,
     newData,
+    sectorPeerFindings,
+    currentNarrative,
+    currentOutlook,
   } = opts;
+
+  const hasNarrative = currentNarrative && currentNarrative.earnings_trend;
+  const hasOutlook = currentOutlook && currentOutlook.fundamentals;
+  const needsFirstRun = !hasNarrative || !hasOutlook;
+
+  const peerContextBlock = sectorPeerFindings
+    ? `\nSECTOR PEER CONTEXT (recent findings from companies in the same sector group — use to detect cross-company signals):\n${sectorPeerFindings}\n`
+    : "";
 
   const systemPrompt = `You are a senior equity research analyst dedicated to covering ${companyName} (${ticker}).
 
@@ -104,21 +118,23 @@ ${riskFactors.map((r) => `- ${r}`).join("\n")}
 
 DAILY SWEEP CRITERIA — FOCUS AREAS:
 ${sweepFocus.map((f) => `- ${f}`).join("\n")}
-
+${peerContextBlock}
 INSTRUCTIONS:
 1. Review the new information provided below
 2. Assess each item against the current thesis and focus areas
-3. Classify the overall sweep as: NO_CHANGE, NOTABLE, or MATERIAL
-4. If NOTABLE or MATERIAL, provide a structured brief
-5. If MATERIAL, recommend specific updates to the investment view or model
-
-INVESTMENT VIEW FORMAT REQUIREMENTS (strictly enforced):
-When suggesting profile updates (for MATERIAL findings), the suggested_profile_updates MUST include an investment_view_detail object:
-- thesis_summary: MAX 100 WORDS (concise investment case)
-- valuation_assessment: array of MAX 4 bullet point strings (current valuation context)
-- key_drivers: array of EXACTLY 3 bullet point strings (positive catalysts)
-- key_risks: array of EXACTLY 3 bullet point strings (downside risks)
-- conviction_rationale: array of MAX 4 bullet point strings (why conviction is at this level)
+3. If sector peer context is provided, consider whether peer company findings signal broader sector trends affecting this company
+4. Classify the overall sweep as: NO_CHANGE, NOTABLE, or MATERIAL
+5. If NOTABLE or MATERIAL, provide a structured brief
+6. If MATERIAL, recommend specific updates to the investment view or model
+7. INVESTMENT VIEW CONTENT LIMITS (strictly enforced):
+   - thesis_summary: MAX 100 WORDS
+   - valuation_assessment: MAX 4 bullet points
+   - key_drivers: MAX 3 bullet points
+   - key_risks: MAX 3 bullet points
+   - conviction_rationale: MAX 4 bullet points
+8. When suggesting profile updates (for MATERIAL findings), the suggested_profile_updates MUST include an investment_view_detail object with the fields above
+9. If MATERIAL, ALSO include "narrative_updates" and "outlook_updates" in your response (see format below). Each sub-section must be max 80 words of prose (no bullet points).
+10. FIRST-RUN RULE: ${needsFirstRun ? "The current narrative and/or outlook is EMPTY. You MUST generate narrative_updates AND outlook_updates regardless of classification (even for NO_CHANGE). This ensures all companies get populated." : "Narrative and outlook already exist. Only include narrative_updates and outlook_updates for MATERIAL findings."}
 
 Respond ONLY with valid JSON in the following format (no markdown, no code fences):
 {
@@ -131,12 +147,22 @@ Respond ONLY with valid JSON in the following format (no markdown, no code fence
     "confidence": "high" | "medium" | "low",
     "sources": ["..."]
   },
-  "suggested_profile_updates": null
+  "suggested_profile_updates": null,
+  "narrative_updates": {
+    "earnings_trend": "Max 80 words prose on earnings trend past 3 quarters",
+    "recent_newsflow": "Max 80 words prose on recent newsflow past 6 months",
+    "long_term_trajectory": "Max 80 words prose on long-term trajectory 3 years"
+  },
+  "outlook_updates": {
+    "fundamentals": "Max 80 words prose on fundamental outlook",
+    "financials": "Max 80 words prose on financial outlook",
+    "risks": "Max 80 words prose on key risks"
+  }
 }
 
-For NO_CHANGE, set summary to "Sweep completed: no change to Investment View" and detail to null.
-For NOTABLE, fill in detail but set suggested_profile_updates to null.
-For MATERIAL, fill in both detail and suggested_profile_updates including an investment_view_detail object with the fields above.`;
+For NO_CHANGE, set summary to "Sweep completed: no change to Investment View" and detail to null. ${needsFirstRun ? "But STILL include narrative_updates and outlook_updates (first-run rule)." : "Set narrative_updates and outlook_updates to null."}
+For NOTABLE, fill in detail but set suggested_profile_updates to null. ${needsFirstRun ? "Include narrative_updates and outlook_updates (first-run rule)." : "Set narrative_updates and outlook_updates to null."}
+For MATERIAL, fill in detail, suggested_profile_updates (with investment_view_detail), AND narrative_updates and outlook_updates.`;
 
   const userContent = newData.length > 0
     ? `NEW INFORMATION FROM TODAY'S SWEEP:\n\n${newData
@@ -351,6 +377,81 @@ Generate a tightly formatted Investment View. Respond ONLY with valid JSON (no m
       conviction_rationale: ["Conviction rationale pending"],
       last_updated: new Date().toISOString(),
       last_updated_reason: "Investment View format migration (parse fallback)",
+    };
+  }
+}
+
+/**
+ * Generate an initial sector-level Investment View from member companies' profiles.
+ * Used when sector_views has no row for a sector (first run).
+ */
+export async function generateInitialSectorView(opts: {
+  sectorName: string;
+  companies: { name: string; ticker: string; stance: string; conviction: string; thesis: string }[];
+}): Promise<InvestmentViewDetail> {
+  const { sectorName, companies } = opts;
+
+  const companyContext = companies
+    .map((c) => `${c.name} (${c.ticker}) — Stance: ${c.stance}, Conviction: ${c.conviction}\nThesis: ${c.thesis || "N/A"}`)
+    .join("\n\n");
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-5-20250929",
+    max_tokens: 4096,
+    system: `You are a senior equity research analyst. Generate an initial sector-level Investment View for the ${sectorName} sector by synthesising the individual company investment views below.
+
+STRICT FORMAT REQUIREMENTS:
+- stance: "bullish" | "neutral" | "bearish"
+- conviction: "high" | "medium" | "low"
+- thesis_summary: MAX 100 WORDS — concise sector investment case
+- valuation_assessment: array of MAX 4 bullet point strings
+- key_drivers: array of EXACTLY 3 bullet point strings
+- key_risks: array of EXACTLY 3 bullet point strings
+- conviction_rationale: array of MAX 4 bullet point strings`,
+    messages: [
+      {
+        role: "user",
+        content: `MEMBER COMPANIES:\n${companyContext}\n\nGenerate an initial sector Investment View. Respond ONLY with valid JSON (no markdown):\n{
+  "stance": "...",
+  "conviction": "...",
+  "thesis_summary": "...",
+  "valuation_assessment": ["..."],
+  "key_drivers": ["...", "...", "..."],
+  "key_risks": ["...", "...", "..."],
+  "conviction_rationale": ["..."],
+  "last_updated": "${new Date().toISOString()}",
+  "last_updated_reason": "Initial sector view generated"
+}`,
+      },
+    ],
+  });
+
+  const rawText = response.content
+    .filter((block) => block.type === "text")
+    .map((block) => "text" in block ? block.text : "")
+    .join("");
+
+  try {
+    return JSON.parse(rawText) as InvestmentViewDetail;
+  } catch {
+    try {
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]) as InvestmentViewDetail;
+      }
+    } catch {
+      // Fall through
+    }
+    return {
+      stance: "neutral",
+      conviction: "medium",
+      thesis_summary: `Initial view for ${sectorName} sector pending generation.`,
+      valuation_assessment: ["Valuation data pending"],
+      key_drivers: ["Growth potential pending", "Market dynamics pending", "Innovation pipeline pending"],
+      key_risks: ["Market risk pending", "Regulatory risk pending", "Competition risk pending"],
+      conviction_rationale: ["Initial assessment pending"],
+      last_updated: new Date().toISOString(),
+      last_updated_reason: "Initial sector view generated (parse fallback)",
     };
   }
 }
