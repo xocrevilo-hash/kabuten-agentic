@@ -500,19 +500,57 @@ export async function getHeatmapResults() {
     weekAgoMap[row.keyword as string] = row.heat_score as number;
   }
 
-  const keywords = snapshots.map((s: Record<string, unknown>) => ({
-    keyword: s.keyword,
-    category: s.category || "uncategorized",
-    heatScore: s.heat_score || 50,
-    totalViews: s.total_views || s.current_views || 0,
-    top3Views: s.top3_views || [],
-    sevenDayAvg: s.seven_day_avg || s.avg_7d_views || 0,
-    trend: s.trend || "steady",
+  let keywords = snapshots.map((s: Record<string, unknown>) => ({
+    keyword: s.keyword as string,
+    category: (s.category || "uncategorized") as string,
+    heatScore: (s.heat_score || 50) as number,
+    totalViews: ((s.total_views || s.current_views || 0) as number),
+    top3Views: (s.top3_views || []) as number[],
+    sevenDayAvg: ((s.seven_day_avg || s.avg_7d_views || 0) as number),
+    trend: (s.trend || "steady") as string,
     delta: weekAgoMap[s.keyword as string]
       ? Math.round((s.heat_score as number) - weekAgoMap[s.keyword as string])
       : 0,
     scanDate: latestDate,
   }));
+
+  // RELATIVE SCORING: When all 7-day averages are 0 but we have real view data,
+  // compute percentile-based scores across today's keywords so the heatmap
+  // shows meaningful color differentiation even on the first real scan.
+  const allAvgsZero = keywords.every((k) => k.sevenDayAvg === 0);
+  const hasRealViews = keywords.some((k) => k.totalViews > 0);
+  if (allAvgsZero && hasRealViews) {
+    // Use log-scale percentile ranking across today's view counts
+    const viewsWithLog = keywords
+      .filter((k) => k.totalViews > 0)
+      .map((k) => ({ keyword: k.keyword, logViews: Math.log10(k.totalViews + 1) }));
+
+    if (viewsWithLog.length > 0) {
+      const logValues = viewsWithLog.map((v) => v.logViews);
+      const minLog = Math.min(...logValues);
+      const maxLog = Math.max(...logValues);
+      const range = maxLog - minLog || 1;
+
+      const logMap: Record<string, number> = {};
+      for (const v of viewsWithLog) {
+        logMap[v.keyword] = v.logViews;
+      }
+
+      keywords = keywords.map((k) => {
+        if (k.totalViews <= 0) {
+          return { ...k, heatScore: 25, trend: "steady" }; // No views = cold
+        }
+        // Normalize to 20-95 range using log-scale percentile
+        const pct = (logMap[k.keyword] - minLog) / range; // 0..1
+        const score = Math.round(20 + pct * 75); // 20..95
+        const trend = score >= 55 ? "heating" : score <= 45 ? "cooling" : "steady";
+        return { ...k, heatScore: score, trend };
+      });
+
+      // Re-sort by heat score descending
+      keywords.sort((a, b) => b.heatScore - a.heatScore);
+    }
+  }
 
   return {
     keywords,
