@@ -131,6 +131,122 @@ function convictionStars(conviction: string | number | null) {
   );
 }
 
+// ── SectorComposer — module-level component for stable React identity ──
+// MUST be defined here (not inside SectorsPage) so React never unmounts it on parent re-renders.
+
+interface SectorComposerProps {
+  activeDesignation: string;
+  chatSending: boolean;
+  onSend: (msg: string, file: File | null, preview: string | null) => void;
+  mobile?: boolean;
+}
+
+function SectorComposer({ activeDesignation, chatSending, onSend, mobile = false }: SectorComposerProps) {
+  const [text, setText] = useState("");
+  const [attachedImage, setAttachedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttachedImage(file);
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearAttachment = () => {
+    setAttachedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSend = () => {
+    if ((!text.trim() && !attachedImage) || chatSending) return;
+    onSend(text.trim(), attachedImage, imagePreview);
+    setText("");
+    clearAttachment();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        onChange={(e) => { handleFileSelect(e); e.target.blur(); }}
+        className="hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+      <div className={`${mobile ? "px-3 py-2" : "px-4 py-3"} bg-white border-t border-gray-200`}>
+        {imagePreview && (
+          <div className="mb-2 relative inline-block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imagePreview} alt="Preview" className="h-16 rounded-lg border border-gray-200" />
+            <button
+              onClick={clearAttachment}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-900 text-white rounded-full text-xs flex items-center justify-center"
+            >
+              &times;
+            </button>
+          </div>
+        )}
+        <div className="flex items-end gap-2">
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
+            className={`${mobile ? "w-[44px] h-[44px]" : "px-2 py-2"} flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0`}
+            title="Attach image"
+            tabIndex={-1}
+          >
+            &#x1F4CE;
+          </button>
+          {mobile ? (
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={`Ask ${activeDesignation}...`}
+              className="flex-1 rounded-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 min-h-[44px]"
+            />
+          ) : (
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={`Ask ${activeDesignation}...`}
+              className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent min-h-[38px] max-h-[120px]"
+              rows={1}
+            />
+          )}
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={chatSending || (!text.trim() && !attachedImage)}
+            className={`${mobile ? "w-[44px] h-[44px] rounded-full" : "px-4 py-2 rounded-lg"} bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0`}
+          >
+            {chatSending ? "..." : mobile ? "\u27A4" : "Send"}
+          </button>
+        </div>
+        {!mobile && (
+          <div className="text-[10px] text-gray-400 mt-1">
+            Enter sends &middot; Shift+Enter for newline &middot; &#x1F4CE; attach image
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 // ── Main Component ──
 
 export default function SectorsPage() {
@@ -148,14 +264,8 @@ export default function SectorsPage() {
   const [rightTab, setRightTab] = useState<"agent" | "sector" | "coverage">("agent");
 
   // Chat
-  const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
   const feedEndRef = useRef<HTMLDivElement>(null);
-
-  // Image attach state
-  const [attachedImage, setAttachedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Ref to avoid stale closures in loadFeed without causing infinite re-renders
   const agentsRef = useRef<AgentStatus[]>([]);
@@ -273,44 +383,24 @@ export default function SectorsPage() {
     }
   }, [activeKey, agents.length, loadFeed]);
 
-  // Handle image attachment
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setAttachedImage(file);
-    const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const clearAttachment = () => {
-    setAttachedImage(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
   // Chat send (with optional image) — persists to Postgres via /api/agents/chat
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleSend = useCallback(async () => {
-    if ((!chatInput.trim() && !attachedImage) || chatSending) return;
-    const msg = chatInput.trim();
-    setChatInput("");
+  const handleSend = useCallback(async (msg: string, file: File | null, preview: string | null) => {
+    if ((!msg && !file) || chatSending) return;
     setChatSending(true);
 
     let imageUrl: string | undefined;
 
     // Upload image if attached
-    if (attachedImage) {
+    if (file) {
       try {
         const formData = new FormData();
-        formData.append("file", attachedImage);
+        formData.append("file", file);
         const uploadRes = await fetch("/api/agents/upload", { method: "POST", body: formData });
         const uploadData = await uploadRes.json();
         imageUrl = uploadData.url;
       } catch {
-        imageUrl = imagePreview || undefined;
+        imageUrl = preview || undefined;
       }
-      clearAttachment();
     }
 
     // Optimistically add OC message to feed
@@ -360,17 +450,7 @@ export default function SectorsPage() {
       setChatSending(false);
       setTimeout(() => feedEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
-  }, [chatInput, attachedImage, chatSending, activeKey, imagePreview, clearAttachment]);
-
-  // ── Composer — Enter sends, Shift+Enter newline, all other keys normal ──
-  // MUST be before the early return to keep hook count consistent across renders
-  const handleComposerKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-    // All other keys: do nothing — let the browser handle normal text input
-  }, [handleSend]);
+  }, [chatSending, activeKey]);
 
   const active = agents.find((a) => a.sector_key === activeKey);
 
@@ -633,83 +713,10 @@ export default function SectorsPage() {
     ? feedItems
     : feedItems.filter((item) => item.type !== "NO_CHANGE");
 
-  // Hidden file input — fully isolated from composer event chain
-  const FileInput = (
-    <input
-      ref={fileInputRef}
-      type="file"
-      accept="image/png,image/jpeg,image/webp,image/gif"
-      onChange={(e) => { handleFileSelect(e); e.target.blur(); }}
-      className="hidden"
-      tabIndex={-1}
-      aria-hidden="true"
-    />
-  );
-
-  const Composer = ({ mobile = false }: { mobile?: boolean }) => (
-    <div className={`${mobile ? "px-3 py-2" : "px-4 py-3"} bg-white border-t border-gray-200`}>
-      {imagePreview && (
-        <div className="mb-2 relative inline-block">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imagePreview} alt="Preview" className="h-16 rounded-lg border border-gray-200" />
-          <button
-            onClick={clearAttachment}
-            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-900 text-white rounded-full text-xs flex items-center justify-center"
-          >
-            &times;
-          </button>
-        </div>
-      )}
-      <div className="flex items-end gap-2">
-        <button
-          type="button"
-          onClick={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
-          className={`${mobile ? "w-[44px] h-[44px]" : "px-2 py-2"} flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0`}
-          title="Attach image"
-          tabIndex={-1}
-        >
-          &#x1F4CE;
-        </button>
-        {mobile ? (
-          <input
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={handleComposerKeyDown}
-            placeholder={`Ask ${active?.designation || "agent"}...`}
-            className="flex-1 rounded-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 min-h-[44px]"
-          />
-        ) : (
-          <textarea
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={handleComposerKeyDown}
-            placeholder={`Ask ${active?.designation || "agent"}...`}
-            className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent min-h-[38px] max-h-[120px]"
-            rows={1}
-          />
-        )}
-        <button
-          type="button"
-          onClick={handleSend}
-          disabled={chatSending || (!chatInput.trim() && !attachedImage)}
-          className={`${mobile ? "w-[44px] h-[44px] rounded-full" : "px-4 py-2 rounded-lg"} bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0`}
-        >
-          {chatSending ? "..." : mobile ? "\u27A4" : "Send"}
-        </button>
-      </div>
-      {!mobile && (
-        <div className="text-[10px] text-gray-400 mt-1">
-          Enter sends &middot; Shift+Enter for newline &middot; &#x1F4CE; attach image
-        </div>
-      )}
-    </div>
-  );
-
   // ── Render ──
 
   return (
     <div className="min-h-screen">
-      {FileInput}
 
       {/* Lightbox */}
       {lightboxUrl && (
@@ -805,7 +812,7 @@ export default function SectorsPage() {
             <div ref={feedEndRef} />
           </div>
 
-          <Composer />
+          <SectorComposer activeDesignation={active?.designation || "agent"} chatSending={chatSending} onSend={handleSend} />
         </div>
 
         {/* RIGHT PANEL — 25vw with min/max */}
@@ -996,7 +1003,7 @@ export default function SectorsPage() {
           {mobileTab === "coverage" && active && <div className="p-3"><CoveragePanel agent={active} /></div>}
         </div>
 
-        <Composer mobile />
+        <SectorComposer activeDesignation={active?.designation || "agent"} chatSending={chatSending} onSend={handleSend} mobile />
 
         <div className="flex bg-white border-t border-gray-200">
           {([
