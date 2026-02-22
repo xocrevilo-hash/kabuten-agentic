@@ -362,6 +362,16 @@ export default function SectorsPage() {
     }
   }, [chatInput, attachedImage, chatSending, activeKey, imagePreview, clearAttachment]);
 
+  // ── Composer — Enter sends, Shift+Enter newline, all other keys normal ──
+  // MUST be before the early return to keep hook count consistent across renders
+  const handleComposerKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+    // All other keys: do nothing — let the browser handle normal text input
+  }, [handleSend]);
+
   const active = agents.find((a) => a.sector_key === activeKey);
 
   if (loading) {
@@ -635,15 +645,6 @@ export default function SectorsPage() {
       aria-hidden="true"
     />
   );
-
-  // ── Composer — Enter sends, Shift+Enter newline, all other keys normal ──
-  const handleComposerKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-    // All other keys: do nothing — let the browser handle normal text input
-  }, [handleSend]);
 
   const Composer = ({ mobile = false }: { mobile?: boolean }) => (
     <div className={`${mobile ? "px-3 py-2" : "px-4 py-3"} bg-white border-t border-gray-200`}>
