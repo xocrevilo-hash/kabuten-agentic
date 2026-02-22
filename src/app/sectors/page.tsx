@@ -157,6 +157,10 @@ export default function SectorsPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Ref to avoid stale closures in loadFeed without causing infinite re-renders
+  const agentsRef = useRef<AgentStatus[]>([]);
+  agentsRef.current = agents;
+
   // Lightbox
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -199,7 +203,7 @@ export default function SectorsPage() {
   const loadFeed = useCallback(async (key: string) => {
     setFeedLoading(true);
     try {
-      const agent = agents.find((a) => a.sector_key === key);
+      const agent = agentsRef.current.find((a) => a.sector_key === key);
       if (!agent) return;
 
       const sectorNameMap: Record<string, string> = {
@@ -249,7 +253,8 @@ export default function SectorsPage() {
     } finally {
       setFeedLoading(false);
     }
-  }, [agents]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Mark sector as read and load feed when switching sectors
   useEffect(() => {
