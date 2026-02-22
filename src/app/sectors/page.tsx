@@ -23,8 +23,10 @@ interface AgentStatus {
   neutral: number;
   bearish: number;
   message_count: number;
+  unread_count: number;
   last_sweep_at: string | null;
   last_updated: string | null;
+  last_read_at: string | null;
   posture: string | null;
   conviction: number | null;
   companies: AgentCompany[];
@@ -158,6 +160,17 @@ export default function SectorsPage() {
   // Lightbox
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
+  // Sweep dropdown state — track which sweep cards are expanded
+  const [expandedSweeps, setExpandedSweeps] = useState<Set<string>>(new Set());
+  const toggleSweep = useCallback((key: string) => {
+    setExpandedSweeps((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
   // Mobile state
   const [mobileTab, setMobileTab] = useState<"feed" | "agent" | "coverage">("feed");
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -197,6 +210,16 @@ export default function SectorsPage() {
         memory_semis: "Memory Semiconductors",
         networking_optics: "Networking & Optics",
         semi_equipment: "Semiconductor Production Equipment",
+        ev_supply_chain: "EV Supply-chain",
+        china_ai_apps: "China AI Apps",
+        china_semis: "China Semis",
+        japan_materials: "Japan Materials",
+        gaming: "Gaming",
+        pcb_supply_chain: "PCB Supply-chain",
+        asean_ecommerce: "ASEAN E-commerce",
+        ai_semis: "AI Semis",
+        mlccs: "MLCCs",
+        server_odms: "Server ODMs",
       };
       const sectorName = sectorNameMap[key] || agent.name;
 
@@ -228,11 +251,22 @@ export default function SectorsPage() {
     }
   }, [agents]);
 
+  // Mark sector as read and load feed when switching sectors
   useEffect(() => {
     if (activeKey && agents.length > 0) {
       loadFeed(activeKey);
+      // Mark as read — fire-and-forget
+      fetch("/api/agents/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sector_key: activeKey }),
+      }).catch(() => {});
+      // Clear unread count locally
+      setAgents((prev) =>
+        prev.map((a) => a.sector_key === activeKey ? { ...a, unread_count: 0 } : a)
+      );
     }
-  }, [activeKey, agents, loadFeed]);
+  }, [activeKey, agents.length, loadFeed]);
 
   // Handle image attachment
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -251,7 +285,8 @@ export default function SectorsPage() {
   };
 
   // Chat send (with optional image) — persists to Postgres via /api/agents/chat
-  const handleSend = async () => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleSend = useCallback(async () => {
     if ((!chatInput.trim() && !attachedImage) || chatSending) return;
     const msg = chatInput.trim();
     setChatInput("");
@@ -320,7 +355,7 @@ export default function SectorsPage() {
       setChatSending(false);
       setTimeout(() => feedEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
-  };
+  }, [chatInput, attachedImage, chatSending, activeKey, imagePreview, clearAttachment]);
 
   const active = agents.find((a) => a.sector_key === activeKey);
 
@@ -365,7 +400,8 @@ export default function SectorsPage() {
         </div>
         <div>
           <div className="font-semibold text-gray-900 text-sm">{agent.designation}</div>
-          <div className="text-xs text-gray-500">{agent.name}</div>
+          <div className="text-[11px] text-gray-400">{agent.name}</div>
+          <div className="text-[10px] text-gray-500">Senior Analyst</div>
         </div>
       </div>
 
@@ -413,11 +449,6 @@ export default function SectorsPage() {
         </>
       )}
 
-      {/* OC's Notes */}
-      <div className="text-[10px] text-gray-400 pt-2 border-t border-gray-100">
-        <div className="font-semibold text-gray-500 uppercase tracking-wide mb-1">OC&apos;s Notes</div>
-        {agent.message_count} messages in thread
-      </div>
     </div>
   );
 
@@ -520,17 +551,61 @@ export default function SectorsPage() {
         ),
       });
     } else if (msg.type === "sweep") {
+      const sweepKey = `sweep-${idx}-${msg.timestamp}`;
+      const results = msg.company_results || [];
+      const matCount = results.filter((r) => r.severity === "material" || r.severity === "MATERIAL").length;
+      const incrCount = results.filter((r) => r.severity === "incremental" || r.severity === "INCREMENTAL").length;
+      const ncCount = results.filter((r) => r.severity === "no_change" || r.severity === "NO_CHANGE" || r.severity === "none").length;
+      const isExpanded = expandedSweeps.has(sweepKey);
+
       feedItems.push({
-        key: `sweep-${idx}-${msg.timestamp}`,
+        key: sweepKey,
         type: "sweep",
         timestamp: msg.timestamp,
         content: (
-          <div className="rounded-lg border border-gray-200 bg-white p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-semibold">SWEEP</span>
+          <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleSweep(sweepKey)}
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
+            >
+              <span className={`text-[10px] text-gray-400 transition-transform ${isExpanded ? "rotate-90" : ""}`}>&#9654;</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold">SWEEP</span>
               <span className="text-[10px] text-gray-400 font-mono">{formatDate(msg.timestamp)}</span>
-            </div>
-            <p className="text-xs text-gray-600">{msg.summary || msg.classification || "Daily sweep processed."}</p>
+              <span className="text-[10px] text-gray-500 ml-auto">{active?.name}</span>
+              <div className="flex gap-1 ml-2">
+                {matCount > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-semibold">{matCount} MAT</span>}
+                {incrCount > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200 font-semibold">{incrCount} INCR</span>}
+                {ncCount > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-500 border border-gray-200 font-semibold">{ncCount} NC</span>}
+                {results.length === 0 && <span className="text-[10px] text-gray-400">Processed</span>}
+              </div>
+            </button>
+            {isExpanded && results.length > 0 && (
+              <div className="border-t border-gray-100 divide-y divide-gray-50">
+                {results.map((r, ri) => {
+                  const sev = (r.severity || "").toUpperCase();
+                  const badgeStyle =
+                    sev === "MATERIAL" ? "bg-amber-100 border-amber-300 text-amber-800" :
+                    sev === "INCREMENTAL" ? "bg-blue-50 border-blue-200 text-blue-700" :
+                    "bg-gray-50 border-gray-200 text-gray-500";
+                  const badgeLabel = sev === "MATERIAL" ? "MATERIAL" : sev === "INCREMENTAL" ? "INCREMENTAL" : "NO CHG";
+                  return (
+                    <div key={ri} className="flex items-start gap-2 px-3 py-2 text-xs">
+                      <span className="text-gray-700 font-mono font-medium min-w-[60px]">{r.company_name}</span>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border flex-shrink-0 ${badgeStyle}`}>{badgeLabel}</span>
+                      <span className="text-gray-600 flex-1">
+                        {(sev === "MATERIAL" || sev === "INCREMENTAL") ? r.summary : "No material change"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {isExpanded && results.length === 0 && (
+              <div className="border-t border-gray-100 px-3 py-2">
+                <p className="text-xs text-gray-500">{msg.summary || "Daily sweep processed."}</p>
+              </div>
+            )}
           </div>
         ),
       });
@@ -543,18 +618,28 @@ export default function SectorsPage() {
     ? feedItems
     : feedItems.filter((item) => item.type !== "NO_CHANGE");
 
-  // Hidden file input
+  // Hidden file input — fully isolated from composer event chain
   const FileInput = (
     <input
       ref={fileInputRef}
       type="file"
       accept="image/png,image/jpeg,image/webp,image/gif"
-      onChange={handleFileSelect}
+      onChange={(e) => { handleFileSelect(e); e.target.blur(); }}
       className="hidden"
+      tabIndex={-1}
+      aria-hidden="true"
     />
   );
 
-  // ── Composer ──
+  // ── Composer — Enter sends, Shift+Enter newline, all other keys normal ──
+  const handleComposerKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+    // All other keys: do nothing — let the browser handle normal text input
+  }, [handleSend]);
+
   const Composer = ({ mobile = false }: { mobile?: boolean }) => (
     <div className={`${mobile ? "px-3 py-2" : "px-4 py-3"} bg-white border-t border-gray-200`}>
       {imagePreview && (
@@ -571,9 +656,11 @@ export default function SectorsPage() {
       )}
       <div className="flex items-end gap-2">
         <button
-          onClick={() => fileInputRef.current?.click()}
+          type="button"
+          onClick={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
           className={`${mobile ? "w-[44px] h-[44px]" : "px-2 py-2"} flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0`}
           title="Attach image"
+          tabIndex={-1}
         >
           &#x1F4CE;
         </button>
@@ -581,7 +668,7 @@ export default function SectorsPage() {
           <input
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            onKeyDown={handleComposerKeyDown}
             placeholder={`Ask ${active?.designation || "agent"}...`}
             className="flex-1 rounded-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 min-h-[44px]"
           />
@@ -589,13 +676,14 @@ export default function SectorsPage() {
           <textarea
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            onKeyDown={handleComposerKeyDown}
             placeholder={`Ask ${active?.designation || "agent"}...`}
             className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent min-h-[38px] max-h-[120px]"
             rows={1}
           />
         )}
         <button
+          type="button"
           onClick={handleSend}
           disabled={chatSending || (!chatInput.trim() && !attachedImage)}
           className={`${mobile ? "w-[44px] h-[44px] rounded-full" : "px-4 py-2 rounded-lg"} bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0`}
@@ -628,17 +716,17 @@ export default function SectorsPage() {
       {/* ── DESKTOP LAYOUT (>768px) ── */}
       <div className="hidden md:flex h-[calc(100vh-52px)]">
         {/* LEFT SIDEBAR — 200px */}
-        <div className="w-[200px] border-r border-gray-200 bg-white flex flex-col flex-shrink-0">
-          <div className="px-3 py-3 border-b border-gray-100">
+        <div className="w-[200px] border-r border-gray-200 bg-[#f4f5f7] flex flex-col flex-shrink-0">
+          <div className="px-3 py-3 border-b border-gray-200">
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-gray-900">K<span className="text-gray-500">&#26666;</span></span>
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Sector Agent</span>
+              <span className="text-[10px] text-gray-900 uppercase tracking-widest font-semibold">Sector Agent</span>
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto py-2">
             <div className="px-3 mb-1">
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Sectors</span>
+              <span className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">Sectors</span>
             </div>
             {agents.map((agent) => {
               const isActive = agent.sector_key === activeKey;
@@ -648,27 +736,33 @@ export default function SectorsPage() {
                   onClick={() => setActiveKey(agent.sector_key)}
                   className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
                     isActive
-                      ? "bg-gray-100 border-l-2 border-l-gray-900"
-                      : "hover:bg-gray-50 border-l-2 border-l-transparent"
+                      ? "bg-[#eef0f5] border-l-2 border-l-[#1e3a5f]"
+                      : "hover:bg-white/60 border-l-2 border-l-transparent"
                   }`}
                 >
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: agent.colour }} />
                   <div className="flex-1 min-w-0">
-                    <div className={`text-xs font-semibold truncate ${isActive ? "text-gray-900" : "text-gray-600"}`}>
+                    <div className={`text-xs font-semibold truncate text-[#111827]`}>
                       {agent.designation}
                     </div>
-                    <div className="text-[10px] text-gray-400 truncate">{agent.name}</div>
+                    <div className="text-[10px] text-gray-500 truncate">{agent.name}</div>
                   </div>
-                  <span className="text-[10px] text-gray-400">{agent.company_count}</span>
+                  {!isActive && agent.unread_count > 0 ? (
+                    <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                      {agent.unread_count}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-gray-500">{agent.company_count}</span>
+                  )}
                 </button>
               );
             })}
           </div>
 
           {/* OC footer */}
-          <div className="px-3 py-3 border-t border-gray-100 flex items-center gap-2">
+          <div className="px-3 py-3 border-t border-gray-200 bg-[#f4f5f7] flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-xs text-gray-600 font-medium">OC Online</span>
+            <span className="text-xs text-gray-700 font-medium">OC Online</span>
           </div>
         </div>
 
@@ -708,8 +802,8 @@ export default function SectorsPage() {
           <Composer />
         </div>
 
-        {/* RIGHT PANEL — 340px */}
-        <div className="w-[340px] border-l border-gray-200 bg-white flex flex-col flex-shrink-0">
+        {/* RIGHT PANEL — 25vw with min/max */}
+        <div className="border-l border-gray-200 bg-white flex flex-col flex-shrink-0" style={{ width: "calc(25vw)", minWidth: "300px", maxWidth: "380px" }}>
           <div className="flex border-b border-gray-200">
             {(["agent", "sector", "coverage"] as const).map((tab) => (
               <button
@@ -728,66 +822,75 @@ export default function SectorsPage() {
             {active && rightTab === "agent" && <AgentPanel agent={active} />}
 
             {rightTab === "sector" && (
-              <div className="space-y-4">
+              <div className="h-full flex flex-col">
                 {sectorView ? (
                   <>
-                    <div className="flex items-center gap-2">
-                      {stanceBadge(sectorView.stance)}
-                      {convictionStars(sectorView.conviction)}
-                    </div>
+                    <div className="flex-shrink-0 space-y-4">
+                      <div className="flex items-center gap-2">
+                        {stanceBadge(sectorView.stance)}
+                        {convictionStars(sectorView.conviction)}
+                      </div>
 
-                    <div>
-                      <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Thesis</h4>
-                      <p className="text-xs text-gray-700 leading-relaxed">{sectorView.thesisSummary}</p>
-                    </div>
-
-                    {sectorView.keyDrivers?.length > 0 && (
                       <div>
-                        <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Key Drivers</h4>
-                        <ul className="space-y-0.5">
-                          {sectorView.keyDrivers.slice(0, 3).map((d, i) => (
-                            <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
-                              <span className="text-green-500 mt-0.5 flex-shrink-0">+</span>{d}
-                            </li>
-                          ))}
-                        </ul>
+                        <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Thesis</h4>
+                        <p className="text-xs text-gray-700 leading-relaxed">{sectorView.thesisSummary}</p>
                       </div>
-                    )}
 
-                    {sectorView.keyRisks?.length > 0 && (
-                      <div>
-                        <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Key Risks</h4>
-                        <ul className="space-y-0.5">
-                          {sectorView.keyRisks.slice(0, 3).map((r, i) => (
-                            <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
-                              <span className="text-red-500 mt-0.5 flex-shrink-0">&ndash;</span>{r}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                      {sectorView.keyDrivers?.length > 0 && (
+                        <div>
+                          <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Key Drivers</h4>
+                          <ul className="space-y-0.5">
+                            {sectorView.keyDrivers.slice(0, 3).map((d, i) => (
+                              <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
+                                <span className="text-green-500 mt-0.5 flex-shrink-0">+</span>{d}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
 
-                    {/* Divider + company list in Sector View tab */}
-                    <div className="border-t border-gray-200 pt-3 mt-3">
-                      <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Companies</h4>
-                      <div className="space-y-1">
-                        {active?.companies.map((c) => (
-                          <Link
-                            key={c.id}
-                            href={`/company/${c.id}`}
-                            className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-50 transition-colors"
-                          >
-                            <div>
-                              <span className="text-xs font-medium text-gray-900">{c.name}</span>
-                              <span className="text-[10px] text-gray-400 font-mono ml-1.5">{c.ticker}</span>
-                            </div>
-                            {stanceBadge(c.stance, true)}
-                          </Link>
-                        ))}
+                      {sectorView.keyRisks?.length > 0 && (
+                        <div>
+                          <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Key Risks</h4>
+                          <ul className="space-y-0.5">
+                            {sectorView.keyRisks.slice(0, 3).map((r, i) => (
+                              <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
+                                <span className="text-red-500 mt-0.5 flex-shrink-0">&ndash;</span>{r}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Divider + scrollable company list */}
+                    <div className="border-t border-gray-200 pt-3 mt-3 flex-1 min-h-0 flex flex-col">
+                      <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2 flex-shrink-0">Companies</h4>
+                      <div className="flex-1 overflow-y-auto space-y-1">
+                        {active?.companies.map((c) => {
+                          const signalLabel = c.stance === "bullish" ? "BULL" : c.stance === "bearish" ? "BEAR" : "NEUT";
+                          const signalColor = c.stance === "bullish" ? "text-green-700 bg-green-50 border-green-200" : c.stance === "bearish" ? "text-red-700 bg-red-50 border-red-200" : "text-amber-700 bg-amber-50 border-amber-200";
+                          const signalArrow = c.stance === "bullish" ? "\u2191" : c.stance === "bearish" ? "\u2193" : "\u2192";
+                          return (
+                            <Link
+                              key={c.id}
+                              href={`/company/${c.id}`}
+                              className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-50 transition-colors"
+                            >
+                              <div>
+                                <span className="text-xs font-medium text-gray-900">{c.name}</span>
+                                <span className="text-[10px] text-gray-400 font-mono ml-1.5">{c.ticker}</span>
+                              </div>
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${signalColor}`}>
+                                {signalArrow} {signalLabel}
+                              </span>
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
 
-                    <div className="text-[10px] text-gray-400 pt-2 border-t border-gray-100">
+                    <div className="text-[10px] text-gray-400 pt-2 border-t border-gray-100 flex-shrink-0">
                       Updated: {formatDateTime(sectorView.lastUpdated)}
                       {sectorView.lastUpdatedReason && (
                         <div className="mt-0.5">Trigger: {sectorView.lastUpdatedReason}</div>
@@ -829,7 +932,13 @@ export default function SectorsPage() {
                     <div className="text-sm font-semibold text-gray-900">{agent.designation}</div>
                     <div className="text-xs text-gray-500">{agent.name}</div>
                   </div>
-                  <span className="text-xs text-gray-400">{agent.company_count}</span>
+                  {agent.sector_key !== activeKey && agent.unread_count > 0 ? (
+                    <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                      {agent.unread_count}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400">{agent.company_count}</span>
+                  )}
                 </button>
               ))}
             </div>

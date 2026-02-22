@@ -210,6 +210,9 @@ export async function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_sat_designation ON sector_agent_threads(designation)
   `;
 
+  // Add last_read_at column for unread message tracking
+  await sql`ALTER TABLE sector_agent_threads ADD COLUMN IF NOT EXISTS last_read_at TIMESTAMPTZ DEFAULT NOW()`;
+
   // Sector synthesis results (one row per sweep per sector)
   await sql`
     CREATE TABLE IF NOT EXISTS sector_syntheses (
@@ -235,7 +238,7 @@ export async function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_ss_synthesised ON sector_syntheses(synthesised_at DESC)
   `;
 
-  // Seed thread rows for all 7 agents
+  // Seed thread rows for all 17 agents
   const agentSeeds = [
     ['au_enterprise_software', 'APEX'],
     ['china_digital_consumption', 'ORIENT'],
@@ -244,6 +247,16 @@ export async function initializeDatabase() {
     ['memory_semis', 'HELIX'],
     ['networking_optics', 'PHOTON'],
     ['semi_equipment', 'FORGE'],
+    ['ev_supply_chain', 'SURGE'],
+    ['china_ai_apps', 'SYNTH'],
+    ['china_semis', 'DRAGON'],
+    ['japan_materials', 'TERRA'],
+    ['gaming', 'PIXEL'],
+    ['pcb_supply_chain', 'LAYER'],
+    ['asean_ecommerce', 'TIDE'],
+    ['ai_semis', 'NOVA'],
+    ['mlccs', 'FERRO'],
+    ['server_odms', 'RACK'],
   ];
   for (const [key, designation] of agentSeeds) {
     await sql`
@@ -916,26 +929,39 @@ export async function seedSectorGroups() {
 
   const sectorMap: Record<string, string[]> = {
     "Australia Enterprise Software": ["REA", "SEK", "WTC", "XRO", "PME"],
-    "China Digital Consumption": ["9988", "BIDU", "NTES", "0700", "TME", "TCOM"],
-    "Data-centre Power & Cooling": ["3324", "2308", "6501", "VST"],
+    "China Digital Consumption": ["9988", "BIDU", "NTES", "0700", "TME", "TCOM", "PDD"],
+    "Data-centre Power & Cooling": ["3324", "2308", "6501", "VST", "2301"],
     "India IT Services": ["INFY", "TCS", "TECHM", "WIPRO"],
-    "Memory Semiconductors": ["285A", "MU", "005930", "SNDK", "STX", "000660"],
-    "Networking & Optics": ["2345", "CLS", "COHR", "FN", "LITE", "300394", "300308"],
+    "Memory Semiconductors": ["285A", "MU", "005930", "SNDK", "STX", "000660", "2408"],
+    "Networking & Optics": ["2345", "CLS", "COHR", "FN", "LITE", "300394", "300308", "300502"],
     "Semiconductor Production Equipment": [
       "688082", "6857", "AMAT", "3711", "ASML", "6146", "6361",
       "7741", "KLAC", "6525", "LRCX", "6920", "6323", "7735", "8035", "7729",
+      "002371",
     ],
+    "EV Supply-chain": ["TSLA", "1211", "300750", "1810", "373220"],
+    "China AI Apps": ["0100", "2513"],
+    "China Semis": ["688981", "688256", "688041", "603501", "688008"],
+    "Japan Materials": ["4004", "3110", "3436", "5016", "4062"],
+    "Gaming": ["7974", "6758", "9697", "EA", "TTWO"],
+    "PCB Supply-chain": ["007660", "2368", "3037", "1303"],
+    "ASEAN E-commerce": ["GRAB", "SE"],
+    "AI Semis": ["2330", "NVDA", "AVGO", "AMD", "2454", "MRVL"],
+    "MLCCs": ["6981", "6762", "2327", "009150"],
+    "Server ODMs": ["2317", "2382", "3231"],
   };
 
+  let totalUpdated = 0;
   for (const [sectorGroup, companyIds] of Object.entries(sectorMap)) {
     for (const companyId of companyIds) {
       await sql`
         UPDATE companies SET sector_group = ${sectorGroup} WHERE id = ${companyId}
       `;
+      totalUpdated++;
     }
   }
 
-  return { success: true, companiesUpdated: 49 };
+  return { success: true, companiesUpdated: totalUpdated };
 }
 
 /**
@@ -1025,6 +1051,15 @@ export async function updateAgentSweepTime(sectorKey: string) {
     UPDATE sector_agent_threads
     SET last_sweep_at = NOW(),
         last_updated = NOW()
+    WHERE sector_key = ${sectorKey}
+  `;
+}
+
+export async function markSectorRead(sectorKey: string) {
+  const sql = getDb();
+  await sql`
+    UPDATE sector_agent_threads
+    SET last_read_at = NOW()
     WHERE sector_key = ${sectorKey}
   `;
 }

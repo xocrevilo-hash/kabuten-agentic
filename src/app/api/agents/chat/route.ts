@@ -65,6 +65,56 @@ const AGENT_CONTEXT: Record<string, { designation: string; name: string; context
     name: "Semi Equipment",
     context: "Semiconductor production equipment. Focus on WFE spending cycles, EUV/High-NA adoption, advanced packaging growth, China export controls, TSMC/Samsung/Intel capex plans.",
   },
+  ev_supply_chain: {
+    designation: "SURGE",
+    name: "EV Supply-chain",
+    context: "Electric vehicle supply chain spanning OEMs, battery manufacturers, and EV component suppliers. Focus on EV adoption curves, battery chemistry transitions, charging infrastructure, autonomous driving progress.",
+  },
+  china_ai_apps: {
+    designation: "SYNTH",
+    name: "China AI Apps",
+    context: "Chinese AI application companies. Focus on large language model deployment, AI-native apps, regulatory landscape for generative AI in China, monetisation models, competitive positioning.",
+  },
+  china_semis: {
+    designation: "DRAGON",
+    name: "China Semis",
+    context: "Chinese domestic semiconductor companies focused on self-sufficiency. Focus on import substitution, US export control impacts, domestic fab capacity expansion, EDA tools, advanced node development.",
+  },
+  japan_materials: {
+    designation: "TERRA",
+    name: "Japan Materials",
+    context: "Japanese semiconductor and electronic materials suppliers. Focus on silicon wafer supply/demand, advanced packaging substrates, specialty chemicals, photoresist technology, JPY sensitivity.",
+  },
+  gaming: {
+    designation: "PIXEL",
+    name: "Gaming",
+    context: "Global gaming companies spanning console, PC, and mobile. Focus on hardware cycle timing, first-party title pipelines, live-service revenue, mobile monetisation, IP leverage, cloud gaming.",
+  },
+  pcb_supply_chain: {
+    designation: "LAYER",
+    name: "PCB Supply-chain",
+    context: "PCB and IC substrate supply chain. Focus on ABF substrate capacity, HDI PCB technology, AI server motherboard complexity, layer count increases, material cost trends.",
+  },
+  asean_ecommerce: {
+    designation: "TIDE",
+    name: "ASEAN E-commerce",
+    context: "Southeast Asian e-commerce and digital economy platforms. Focus on GMV growth, path to profitability, fintech cross-sell, food delivery unit economics, TikTok Shop competition.",
+  },
+  ai_semis: {
+    designation: "NOVA",
+    name: "AI Semis",
+    context: "Core AI semiconductor companies spanning GPU/accelerator design, foundry, and networking silicon. Focus on AI training/inference demand, custom ASIC trends, advanced node capacity, HBM integration.",
+  },
+  mlccs: {
+    designation: "FERRO",
+    name: "MLCCs",
+    context: "MLCC and passive component manufacturers. Focus on automotive electrification demand, AI server capacitor content, miniaturisation trends, inventory cycles, pricing power.",
+  },
+  server_odms: {
+    designation: "RACK",
+    name: "Server ODMs",
+    context: "Taiwan-based server ODMs building AI and cloud servers for hyperscalers. Focus on AI server order visibility, GPU allocation, rack-level architecture, liquid cooling, margin trajectory.",
+  },
 };
 
 /**

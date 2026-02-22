@@ -1384,20 +1384,30 @@ The Sectors page has been redesigned from a simple tab + two-column card layout 
 ```
 KabutenOrchestrator
 ├── APEX    → AU Enterprise Software     (5 companies)
-├── ORIENT  → China Digital Consumption  (6 companies)
-├── VOLT    → DC Power & Cooling         (4 companies)
+├── ORIENT  → China Digital Consumption  (7 companies)
+├── VOLT    → DC Power & Cooling         (5 companies)
 ├── INDRA   → India IT Services          (4 companies)
-├── HELIX   → Memory Semis              (6 companies)
-├── PHOTON  → Networking & Optics        (7 companies)
-└── FORGE   → Semi Equipment            (16 companies)
+├── HELIX   → Memory Semis              (7 companies)
+├── PHOTON  → Networking & Optics        (8 companies)
+├── FORGE   → Semi Equipment            (17 companies)
+├── CHARGE   → EV Supply-chain           (5 companies)
+├── SAGE   → China AI Apps             (2 companies)
+├── DRAGON  → China Semis              (5 companies)
+├── ELEMENT   → Japan Materials           (5 companies)
+├── PIXEL   → Gaming                    (5 companies)
+├── TRACE   → PCB Supply-chain          (4 companies)
+├── BAZAAR    → ASEAN E-commerce          (2 companies)
+├── NEXUS    → AI Semis                  (6 companies)
+├── LATTICE   → MLCCs                     (4 companies)
+└── RACK    → Server ODMs               (3 companies)
      └── Each Sector Lead orchestrates N × CompanyCoverageAgent
 ```
 
 **Agent roles:**
 
-- **KabutenOrchestrator** — top-level manager. Runs all 7 sector sweeps concurrently via `asyncio.gather`. Routes OC chat messages to the correct sector thread.
-- **SectorLeadAgent** (APEX / ORIENT / VOLT / INDRA / HELIX / PHOTON / FORGE) — one per sector. Orchestrates its CompanyCoverageAgents, synthesises findings into a sector view, escalates material findings for deep-dive analysis, maintains the persistent sector conversation thread, and converses with OC.
-- **CompanyCoverageAgent** — one per company (48 total). Sub-agent invoked by its parent SectorLead. Returns structured JSON findings. Runs at `effort="low"` for routine sweeps, `effort="high"` for escalated deep-dives.
+- **KabutenOrchestrator** — top-level manager. Runs all 17 sector sweeps concurrently via `asyncio.gather`. Routes OC chat messages to the correct sector thread.
+- **SectorLeadAgent** (APEX / ORIENT / VOLT / INDRA / HELIX / PHOTON / FORGE / CHARGE / SAGE / DRAGON / ELEMENT / PIXEL / TRACE / BAZAAR / NEXUS / LATTICE / RACK) — one per sector (17 total). Orchestrates its CompanyCoverageAgents, synthesises findings into a sector view, escalates material findings for deep-dive analysis, maintains the persistent sector conversation thread, and converses with OC.
+- **CompanyCoverageAgent** — one per company (89 total across all 17 sectors). Sub-agent invoked by its parent SectorLead. Returns structured JSON findings. Runs at `effort="low"` for routine sweeps, `effort="high"` for escalated deep-dives. **94 CompanyCoverageAgents total** across 17 sectors.
 
 **Sonnet 4.6 features in use:**
 
@@ -1428,7 +1438,7 @@ The agent package lives at `agents/` in the repo root. All files are complete an
 
 | File | Purpose |
 |---|---|
-| `agents/config.py` | All 7 sector + 48 company definitions — **single source of truth** for tickers, exchanges, and sector-specific system prompt context |
+| `agents/config.py` | All 17 sector + 94 company definitions — **single source of truth** for tickers, exchanges, and sector-specific system prompt context |
 | `agents/company_agent.py` | `CompanyCoverageAgent` — sub-agent, structured JSON output, web search, effort scaling |
 | `agents/sector_agent.py` | `SectorLeadAgent` — orchestration, context compaction, synthesis, chat |
 | `agents/orchestrator.py` | `KabutenOrchestrator` — top-level manager, concurrent sweep, chat routing |
@@ -1443,17 +1453,123 @@ All 7 sectors and 48 companies verified against the live database on 22 Feb 2026
 | Agent | Sector | Companies (ticker — exchange) |
 |---|---|---|
 | **APEX** | AU Enterprise Software | WTC–ASX, XRO–ASX, PME–ASX, REA–ASX, SEK–ASX |
-| **ORIENT** | China Digital Consumption | BABA–HKEX, BIDU–NASDAQ, NTES–NASDAQ, 700.HK–HKEX, TME–NYSE, TCOM–NASDAQ |
-| **VOLT** | DC Power & Cooling | 3324.TW–TWSE, 2308.TW–TWSE, 6501.T–TSE, VST–NYSE |
+| **ORIENT** | China Digital Consumption | BABA–HKEX, BIDU–NASDAQ, NTES–NASDAQ, 700.HK–HKEX, TME–NYSE, TCOM–NASDAQ, PDD–NASDAQ |
+| **VOLT** | DC Power & Cooling | 3324.TW–TWSE, 2308.TW–TWSE, 6501.T–TSE, VST–NYSE, 2301.TW–TWSE |
 | **INDRA** | India IT Services | INFY.NS–NSE, TCS.NS–NSE, TECHM.NS–NSE, WIPRO.NS–NSE |
-| **HELIX** | Memory Semis | 285A.T–TSE, MU–NASDAQ, 005930.KS–KRX, SNDK–NASDAQ, STX–NASDAQ, 000660.KS–KRX |
-| **PHOTON** | Networking & Optics | 2345.TW–TWSE, CLS–NYSE, COHR–NYSE, FN–NYSE, LITE–NASDAQ, 300394.SZ–SZSE, 300308.SZ–SZSE |
-| **FORGE** | Semi Equipment | 688082.SS–SHSE, 6857.T–TSE, AMAT–NASDAQ, 3711.TW–TWSE, ASML–NASDAQ, 6146.T–TSE, 6361.T–TSE, 7741.T–TSE, KLAC–NASDAQ, 6525.T–TSE, LRCX–NASDAQ, 6920.T–TSE, 6323.T–TSE, 7735.T–TSE, 8035.T–TSE, 7729.T–TSE |
+| **HELIX** | Memory Semis | 285A.T–TSE, MU–NASDAQ, 005930.KS–KRX, SNDK–NASDAQ, STX–NASDAQ, 000660.KS–KRX, 2408.TW–TWSE |
+| **PHOTON** | Networking & Optics | 2345.TW–TWSE, CLS–NYSE, COHR–NYSE, FN–NYSE, LITE–NASDAQ, 300394.SZ–SZSE, 300308.SZ–SZSE, 300502.SZ–SZSE |
+| **FORGE** | Semi Equipment | 688082.SS–SHSE, 6857.T–TSE, AMAT–NASDAQ, 3711.TW–TWSE, ASML–NASDAQ, 6146.T–TSE, 6361.T–TSE, 7741.T–TSE, KLAC–NASDAQ, 6525.T–TSE, LRCX–NASDAQ, 6920.T–TSE, 6323.T–TSE, 7735.T–TSE, 8035.T–TSE, 7729.T–TSE, 002371.SZ–SZSE |
+| **CHARGE** | EV Supply-chain | TSLA–NASDAQ, 1211.HK–HKEX, 300750.SZ–SZSE, 1810.HK–HKEX, 373220.KS–KRX |
+| **SAGE** | China AI Apps | 00100.HK–HKEX, 02513.HK–HKEX |
+| **DRAGON** | China Semis | 688981.SS–SHSE, 688256.SS–SHSE, 688041.SS–SHSE, 603501.SS–SHSE, 688008.SS–SHSE |
+| **ELEMENT** | Japan Materials | 4004.T–TSE, 3110.T–TSE, 3436.T–TSE, 5016.T–TSE, 4062.T–TSE |
+| **PIXEL** | Gaming | 7974.T–TSE, 6758.T–TSE, 9697.T–TSE, EA–NASDAQ, TTWO–NASDAQ |
+| **TRACE** | PCB Supply-chain | 007660.KS–KRX, 2368.TW–TWSE, 3037.TW–TWSE, 1303.TW–TWSE |
+| **BAZAAR** | ASEAN E-commerce | GRAB–NASDAQ, SE–NYSE |
+| **NEXUS** | AI Semis | 2330.TW–TWSE, NVDA–NASDAQ, AVGO–NASDAQ, AMD–NASDAQ, 2454.TW–TWSE, MRVL–NASDAQ |
+| **LATTICE** | MLCCs | 6981.T–TSE, 6762.T–TSE, 2327.TW–TWSE, 009150.KS–KRX |
+| **RACK** | Server ODMs | 2317.TW–TWSE, 2382.TW–TWSE, 3231.TW–TWSE |
 
-**Note:** Networking & Optics is now **7 companies** (Sunny Optical removed, confirmed against live DB). Semi Equipment remains 16.
+**Company name reference — all 17 sectors, 94 companies, verified 22 Feb 2026:**
 
-**Note:** 182 companies have no `sector_group` assigned. They still receive individual sweeps; peer context is not injected for ungrouped companies.
+| Ticker | Company Name | Sector |
+|---|---|---|
+| WTC | WiseTech Global | AU Enterprise Software |
+| XRO | Xero | AU Enterprise Software |
+| PME | Pro Medicus | AU Enterprise Software |
+| REA | REA Group | AU Enterprise Software |
+| SEK | Seek | AU Enterprise Software |
+| BABA | Alibaba Group | China Digital Consumption |
+| BIDU | Baidu | China Digital Consumption |
+| NTES | NetEase | China Digital Consumption |
+| 700.HK | Tencent Holdings | China Digital Consumption |
+| TME | Tencent Music | China Digital Consumption |
+| TCOM | Trip.com Group | China Digital Consumption |
+| PDD | PDD Holdings (Temu/Pinduoduo) | China Digital Consumption |
+| 3324.TW | Auras Technology | DC Power & Cooling |
+| 2308.TW | Delta Electronics | DC Power & Cooling |
+| 6501.T | Hitachi | DC Power & Cooling |
+| VST | Vistra Corp | DC Power & Cooling |
+| 2301.TW | Lite-On Technology | DC Power & Cooling |
+| INFY.NS | Infosys | India IT Services |
+| TCS.NS | Tata Consultancy Services | India IT Services |
+| TECHM.NS | Tech Mahindra | India IT Services |
+| WIPRO.NS | Wipro | India IT Services |
+| 285A.T | Kioxia | Memory Semis |
+| MU | Micron Technology | Memory Semis |
+| 005930.KS | Samsung Electronics | Memory Semis |
+| SNDK | SanDisk | Memory Semis |
+| STX | Seagate Technology | Memory Semis |
+| 000660.KS | SK Hynix | Memory Semis |
+| 2408.TW | Nanya Technology | Memory Semis |
+| 2345.TW | Accton Technology | Networking & Optics |
+| CLS | Celestica | Networking & Optics |
+| COHR | Coherent Corp | Networking & Optics |
+| FN | Fabrinet | Networking & Optics |
+| LITE | Lumentum | Networking & Optics |
+| 300394.SZ | Suzhou TFC Optical Communication | Networking & Optics |
+| 300308.SZ | Zhongji Innolight | Networking & Optics |
+| 300502.SZ | Eoptolink Technology | Networking & Optics |
+| 688082.SS | ACM Research (Shanghai) | Semi Equipment |
+| 6857.T | Advantest | Semi Equipment |
+| AMAT | Applied Materials | Semi Equipment |
+| 3711.TW | ASE Technology | Semi Equipment |
+| ASML | ASML | Semi Equipment |
+| 6146.T | Disco Corporation | Semi Equipment |
+| 6361.T | Ebara | Semi Equipment |
+| 7741.T | Hoya | Semi Equipment |
+| KLAC | KLA Corporation | Semi Equipment |
+| 6525.T | Kokusai Electric | Semi Equipment |
+| LRCX | Lam Research | Semi Equipment |
+| 6920.T | Lasertec | Semi Equipment |
+| 6323.T | Rorze | Semi Equipment |
+| 7735.T | Screen Holdings | Semi Equipment |
+| 8035.T | Tokyo Electron | Semi Equipment |
+| 7729.T | Tokyo Seimitsu | Semi Equipment |
+| 002371.SZ | NAURA Technology Group | Semi Equipment |
+| TSLA | Tesla | EV Supply-chain |
+| 1211.HK | BYD (H-shares) | EV Supply-chain |
+| 300750.SZ | CATL | EV Supply-chain |
+| 1810.HK | Xiaomi | EV Supply-chain |
+| 373220.KS | LG Energy Solution | EV Supply-chain |
+| 00100.HK | MiniMax Group | China AI Apps |
+| 02513.HK | Zhipu / Z.ai (Knowledge Atlas Technology) | China AI Apps |
+| 688981.SS | SMIC | China Semis |
+| 688256.SS | Cambricon Technologies | China Semis |
+| 688041.SS | Hygon Information Technology | China Semis |
+| 603501.SS | Will Semiconductor (OmniVision) | China Semis |
+| 688008.SS | Montage Technology | China Semis |
+| 4004.T | Resonac Holdings | Japan Materials |
+| 3110.T | Nitto Boseki | Japan Materials |
+| 3436.T | Sumco | Japan Materials |
+| 5016.T | JX Advanced Metals | Japan Materials |
+| 4062.T | Ibiden | Japan Materials |
+| 7974.T | Nintendo | Gaming |
+| 6758.T | Sony Group | Gaming |
+| 9697.T | Capcom | Gaming |
+| EA | Electronic Arts | Gaming |
+| TTWO | Take-Two Interactive | Gaming |
+| 007660.KS | Isu Petasys | PCB Supply-chain |
+| 2368.TW | Gold Circuit Electronics | PCB Supply-chain |
+| 3037.TW | Unimicron Technology | PCB Supply-chain |
+| 1303.TW | Nanya Plastics | PCB Supply-chain |
+| GRAB | Grab Holdings | ASEAN E-commerce |
+| SE | SEA Limited | ASEAN E-commerce |
+| 2330.TW | TSMC | AI Semis |
+| NVDA | Nvidia | AI Semis |
+| AVGO | Broadcom | AI Semis |
+| AMD | AMD | AI Semis |
+| 2454.TW | Mediatek | AI Semis |
+| MRVL | Marvell Technology | AI Semis |
+| 6981.T | Murata Manufacturing | MLCCs |
+| 6762.T | TDK | MLCCs |
+| 2327.TW | Yageo | MLCCs |
+| 009150.KS | Samsung Electro-Mechanics | MLCCs |
+| 2317.TW | Hon Hai Precision (Foxconn) | Server ODMs |
+| 2382.TW | Quanta Computer | Server ODMs |
+| 3231.TW | Wistron | Server ODMs |
 
+**Note on Tokyo Seimitsu:** Tokyo Seimitsu (7729.T) was already in FORGE from the original verified list and was not a new addition.
 ---
 
 #### UI — Three-Pane Chatroom Layout

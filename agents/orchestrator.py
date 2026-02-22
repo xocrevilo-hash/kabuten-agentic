@@ -1,8 +1,8 @@
 """
 KabutenOrchestrator — top-level manager for the multi-agent sector system.
 
-Runs all 7 sector sweeps concurrently via asyncio.gather.
-Routes PM chat messages to the correct sector thread.
+Runs all 17 sector sweeps concurrently via asyncio.gather.
+Routes OC chat messages to the correct sector thread.
 """
 
 import asyncio
@@ -11,7 +11,7 @@ from agents.sector_agent import SectorLeadAgent, SectorSynthesis
 
 
 class KabutenOrchestrator:
-    """Top-level orchestrator managing all 7 sector lead agents."""
+    """Top-level orchestrator managing all 17 sector lead agents."""
 
     def __init__(self):
         self._agents: dict[str, SectorLeadAgent] = {}
@@ -30,7 +30,7 @@ class KabutenOrchestrator:
         return agent.export_thread() if agent else []
 
     async def run_all_sweeps(self) -> dict[str, SectorSynthesis]:
-        """Run daily sweep across all 7 sectors concurrently."""
+        """Run daily sweep across all 17 sectors concurrently."""
         results = await asyncio.gather(
             *[agent.run_daily_sweep() for agent in self._agents.values()],
             return_exceptions=True,
@@ -54,7 +54,7 @@ class KabutenOrchestrator:
         return await agent.run_daily_sweep()
 
     async def chat(self, sector_key: str, message: str) -> str:
-        """Route PM chat message to the correct sector agent."""
+        """Route OC chat message to the correct sector agent."""
         agent = self._agents.get(sector_key)
         if not agent:
             return f"Unknown sector: {sector_key}"

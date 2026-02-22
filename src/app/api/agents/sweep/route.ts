@@ -19,7 +19,7 @@ const AGENTS: Record<string, { designation: string; name: string; companyIds: st
 /**
  * POST /api/agents/sweep
  * Runs the multi-agent sector sweep for one or all sectors.
- * Body: { sector_key?: string } — omit to sweep all 7.
+ * Body: { sector_key?: string } — omit to sweep all 17.
  */
 export async function POST(request: Request) {
   try {
