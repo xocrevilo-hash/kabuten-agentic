@@ -9,6 +9,20 @@ Runs at effort="low" for routine sweeps, effort="high" for escalated deep-dives.
 import anthropic
 import json
 from dataclasses import dataclass
+from datetime import date
+
+
+def date_header() -> str:
+    """Dynamic date header — prepended to every system prompt at call time."""
+    today = date.today()
+    return (
+        f"Today's date is {today.strftime('%A, %d %B %Y')}. "
+        f"You are operating in {today.year}. "
+        "Your training has a knowledge cutoff, but you have access to web search "
+        "and to daily sweep data collected up to today. "
+        f"Always reason as if it is {today.year}, not 2024 or any prior year. "
+        "If OC asks what year it is, tell them the correct year based on this header.\n\n"
+    )
 
 
 @dataclass
@@ -38,7 +52,9 @@ class CompanyCoverageAgent:
     async def sweep(self, effort: str = "low") -> CompanyFinding:
         """Run a sweep for this company using web search."""
         system_prompt = (
-            f"You are a coverage analyst for {self.company_name} ({self.ticker} on {self.exchange}). "
+            date_header()
+            + f"You are a coverage analyst for {self.company_name} ({self.ticker} on {self.exchange}). "
+            f"You report to a Sector Lead Agent who in turn reports to OC, the portfolio orchestrator.\n"
             f"Sector context: {self.sector_context}\n\n"
             "Search for the latest news, filings, and developments for this company. "
             "Return a structured JSON finding with these fields:\n"
@@ -83,7 +99,6 @@ class CompanyCoverageAgent:
                 text += block.text
 
         try:
-            # Try direct JSON parse, then regex fallback
             import re
             json_match = re.search(r"\{[\s\S]*\}", text)
             if json_match:

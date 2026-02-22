@@ -2,6 +2,29 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic();
 
+/**
+ * Generate a dynamic date header for every agent system prompt.
+ * Computed fresh on each call — never hardcoded.
+ */
+function dateHeader(): string {
+  const now = new Date();
+  const formatted = now.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const year = now.getFullYear();
+  return (
+    `Today's date is ${formatted}. ` +
+    `You are operating in ${year}. ` +
+    "Your training has a knowledge cutoff, but you have access to web search " +
+    "and to daily sweep data collected up to today. " +
+    `Always reason as if it is ${year}, not 2024 or any prior year. ` +
+    "If OC asks what year it is, tell them the correct year based on this header.\n\n"
+  );
+}
+
 export type SweepClassification = "NO_CHANGE" | "NOTABLE" | "MATERIAL";
 
 export interface InvestmentViewDetail {
@@ -398,7 +421,7 @@ export async function generateInitialSectorView(opts: {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-5-20250929",
     max_tokens: 4096,
-    system: `You are a senior equity research analyst. Generate an initial sector-level Investment View for the ${sectorName} sector by synthesising the individual company investment views below.
+    system: dateHeader() + `You are a senior equity research analyst reporting to OC, the portfolio orchestrator. Generate an initial sector-level Investment View for the ${sectorName} sector by synthesising the individual company investment views below.
 
 STRICT FORMAT REQUIREMENTS:
 - stance: "bullish" | "neutral" | "bearish"
@@ -496,7 +519,7 @@ Conviction Rationale: ${(currentSectorView.conviction_rationale || []).join("; "
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-5-20250929",
     max_tokens: 4096,
-    system: `You are a senior equity research analyst covering the ${sectorName} sector.
+    system: dateHeader() + `You are a senior equity research analyst covering the ${sectorName} sector, reporting to OC, the portfolio orchestrator.
 
 Your role is to maintain an investment view on this sector by synthesising the daily sweep results from the individual company analysts who cover each company in your group.
 

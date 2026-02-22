@@ -28,6 +28,7 @@ interface AgentStatus {
   posture: string | null;
   conviction: number | null;
   companies: AgentCompany[];
+  thread_history: ThreadMessage[];
 }
 
 interface SectorViewData {
@@ -56,10 +57,10 @@ interface ThreadMessage {
   type: string;
   timestamp: string;
   content?: string;
+  image_url?: string;
   summary?: string;
   classification?: string;
   company_results?: Array<{ company_name: string; severity: string; summary: string }>;
-  findings?: Array<{ ticker: string; company_name: string; finding_type: string; headline: string; signal: string; category: string; assessment: string }>;
 }
 
 // ── Helpers ──
@@ -149,12 +150,20 @@ export default function SectorsPage() {
   const [chatSending, setChatSending] = useState(false);
   const feedEndRef = useRef<HTMLDivElement>(null);
 
+  // Image attach state
+  const [attachedImage, setAttachedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Lightbox
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
   // Mobile state
   const [mobileTab, setMobileTab] = useState<"feed" | "agent" | "coverage">("feed");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showAllSweep, setShowAllSweep] = useState(false);
 
-  // Load agents on mount
+  // Load agent list on mount (without full thread histories — those load on demand)
   useEffect(() => {
     async function load() {
       try {
@@ -173,14 +182,13 @@ export default function SectorsPage() {
     load();
   }, []);
 
-  // Load feed data for active sector
+  // Load feed data for active sector ON DEMAND from Postgres
   const loadFeed = useCallback(async (key: string) => {
     setFeedLoading(true);
     try {
       const agent = agents.find((a) => a.sector_key === key);
       if (!agent) return;
 
-      // Fetch sector detail (view + log) and thread in parallel
       const sectorNameMap: Record<string, string> = {
         au_enterprise_software: "Australia Enterprise Software",
         china_digital_consumption: "China Digital Consumption",
@@ -192,21 +200,27 @@ export default function SectorsPage() {
       };
       const sectorName = sectorNameMap[key] || agent.name;
 
-      const [sectorRes] = await Promise.all([
+      // Fetch sector view/log AND this sector's thread from Postgres in parallel
+      const [sectorRes, threadRes] = await Promise.all([
         fetch(`/api/sectors?sector=${encodeURIComponent(sectorName)}`),
+        fetch(`/api/agents/status?sector_key=${key}`),
       ]);
 
       const sectorData = await sectorRes.json();
       const sector = sectorData.sectors?.[0];
-
       if (sector) {
         setSectorView(sector.sectorView || null);
         setSectorLog(sector.log || []);
       }
 
-      // Load thread history from agent status (it's in the thread table)
-      // We'll parse from agent status or separate endpoint
-      setThreadMessages([]);
+      // Hydrate thread messages from Postgres (source of truth)
+      const threadData = await threadRes.json();
+      const agentData = threadData.agents?.[0];
+      if (agentData?.thread_history) {
+        setThreadMessages(agentData.thread_history as ThreadMessage[]);
+      } else {
+        setThreadMessages([]);
+      }
     } catch {
       // Silent fail
     } finally {
@@ -220,37 +234,80 @@ export default function SectorsPage() {
     }
   }, [activeKey, agents, loadFeed]);
 
-  // Chat send
+  // Handle image attachment
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttachedImage(file);
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearAttachment = () => {
+    setAttachedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Chat send (with optional image) — persists to Postgres via /api/agents/chat
   const handleSend = async () => {
-    if (!chatInput.trim() || chatSending) return;
+    if ((!chatInput.trim() && !attachedImage) || chatSending) return;
     const msg = chatInput.trim();
     setChatInput("");
     setChatSending(true);
 
-    // Optimistically add PM message
-    const pmMsg: ThreadMessage = {
+    let imageUrl: string | undefined;
+
+    // Upload image if attached
+    if (attachedImage) {
+      try {
+        const formData = new FormData();
+        formData.append("file", attachedImage);
+        const uploadRes = await fetch("/api/agents/upload", { method: "POST", body: formData });
+        const uploadData = await uploadRes.json();
+        imageUrl = uploadData.url;
+      } catch {
+        imageUrl = imagePreview || undefined;
+      }
+      clearAttachment();
+    }
+
+    // Optimistically add OC message to feed
+    const ocMsg: ThreadMessage = {
       role: "user",
-      type: "pm_message",
+      type: "oc_message",
       timestamp: new Date().toISOString(),
-      content: msg,
+      content: msg || "",
+      image_url: imageUrl,
     };
-    setThreadMessages((prev) => [...prev, pmMsg]);
+    setThreadMessages((prev) => [...prev, ocMsg]);
 
     try {
       const res = await fetch("/api/agents/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sector_key: activeKey, message: msg }),
+        body: JSON.stringify({
+          sector_key: activeKey,
+          message: msg || "",
+          image_url: imageUrl,
+        }),
       });
       const data = await res.json();
 
-      const agentReply: ThreadMessage = {
-        role: "assistant",
-        type: "agent_response",
-        timestamp: new Date().toISOString(),
-        content: data.reply || "No response.",
-      };
-      setThreadMessages((prev) => [...prev, agentReply]);
+      // Replace optimistic messages with the full persisted thread from DB
+      if (data.thread_history) {
+        setThreadMessages(data.thread_history as ThreadMessage[]);
+      } else {
+        // Fallback: just append the reply
+        const agentReply: ThreadMessage = {
+          role: "assistant",
+          type: "agent_response",
+          timestamp: new Date().toISOString(),
+          content: data.reply || "No response.",
+        };
+        setThreadMessages((prev) => [...prev, agentReply]);
+      }
     } catch {
       const errMsg: ThreadMessage = {
         role: "assistant",
@@ -299,7 +356,6 @@ export default function SectorsPage() {
 
   const AgentPanel = ({ agent }: { agent: AgentStatus }) => (
     <div className="space-y-4">
-      {/* Agent identity */}
       <div className="flex items-center gap-3">
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
@@ -313,12 +369,10 @@ export default function SectorsPage() {
         </div>
       </div>
 
-      {/* Last sweep */}
       <div className="text-xs text-gray-400">
         Last sweep: {formatDateTime(agent.last_sweep_at)}
       </div>
 
-      {/* Posture + conviction */}
       {agent.posture && (
         <div className="flex items-center gap-2">
           {stanceBadge(agent.posture)}
@@ -326,14 +380,12 @@ export default function SectorsPage() {
         </div>
       )}
 
-      {/* Sector View detail */}
       {sectorView && (
         <>
           <div>
             <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Thesis</h4>
             <p className="text-xs text-gray-700 leading-relaxed">{sectorView.thesisSummary}</p>
           </div>
-
           {sectorView.keyDrivers?.length > 0 && (
             <div>
               <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Key Drivers</h4>
@@ -346,7 +398,6 @@ export default function SectorsPage() {
               </ul>
             </div>
           )}
-
           {sectorView.keyRisks?.length > 0 && (
             <div>
               <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Key Risks</h4>
@@ -362,8 +413,9 @@ export default function SectorsPage() {
         </>
       )}
 
-      {/* Message count */}
+      {/* OC's Notes */}
       <div className="text-[10px] text-gray-400 pt-2 border-t border-gray-100">
+        <div className="font-semibold text-gray-500 uppercase tracking-wide mb-1">OC&apos;s Notes</div>
         {agent.message_count} messages in thread
       </div>
     </div>
@@ -390,10 +442,17 @@ export default function SectorsPage() {
     </div>
   );
 
-  // Build feed items from log entries and thread messages
+  // ── Inline image renderer ──
+  const InlineImage = ({ url }: { url: string }) => (
+    <button onClick={() => setLightboxUrl(url)} className="block mt-1 cursor-zoom-in">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="Attached" className="rounded-lg max-h-[320px] w-auto object-contain border border-gray-200" />
+    </button>
+  );
+
+  // ── Build feed items ──
   const feedItems: Array<{ key: string; type: string; timestamp: string; content: React.ReactNode }> = [];
 
-  // Add sector log entries
   for (const entry of sectorLog) {
     feedItems.push({
       key: `log-${entry.id}`,
@@ -418,28 +477,29 @@ export default function SectorsPage() {
     });
   }
 
-  // Add thread messages (PM + agent responses)
-  for (const msg of threadMessages) {
-    if (msg.type === "pm_message") {
+  for (let idx = 0; idx < threadMessages.length; idx++) {
+    const msg = threadMessages[idx];
+    if (msg.type === "oc_message" || msg.type === "pm_message") {
       feedItems.push({
-        key: `pm-${msg.timestamp}`,
-        type: "pm",
+        key: `oc-${idx}-${msg.timestamp}`,
+        type: "oc",
         timestamp: msg.timestamp,
         content: (
           <div className="flex justify-end">
             <div className="max-w-[80%] rounded-lg bg-gray-900 text-white p-3">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 font-semibold">PM</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 font-semibold">OC</span>
                 <span className="text-[10px] text-gray-400 font-mono">{formatTime(msg.timestamp)}</span>
               </div>
-              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+              {msg.image_url && <InlineImage url={msg.image_url} />}
+              {msg.content && <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
             </div>
           </div>
         ),
       });
     } else if (msg.type === "agent_response") {
       feedItems.push({
-        key: `agent-${msg.timestamp}`,
+        key: `agent-${idx}-${msg.timestamp}`,
         type: "agent",
         timestamp: msg.timestamp,
         content: (
@@ -459,34 +519,123 @@ export default function SectorsPage() {
           </div>
         ),
       });
+    } else if (msg.type === "sweep") {
+      feedItems.push({
+        key: `sweep-${idx}-${msg.timestamp}`,
+        type: "sweep",
+        timestamp: msg.timestamp,
+        content: (
+          <div className="rounded-lg border border-gray-200 bg-white p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-semibold">SWEEP</span>
+              <span className="text-[10px] text-gray-400 font-mono">{formatDate(msg.timestamp)}</span>
+            </div>
+            <p className="text-xs text-gray-600">{msg.summary || msg.classification || "Daily sweep processed."}</p>
+          </div>
+        ),
+      });
     }
   }
 
-  // Sort by timestamp
   feedItems.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-  // For mobile feed: filter sweep items
   const mobileFeedItems = showAllSweep
     ? feedItems
     : feedItems.filter((item) => item.type !== "NO_CHANGE");
+
+  // Hidden file input
+  const FileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/png,image/jpeg,image/webp,image/gif"
+      onChange={handleFileSelect}
+      className="hidden"
+    />
+  );
+
+  // ── Composer ──
+  const Composer = ({ mobile = false }: { mobile?: boolean }) => (
+    <div className={`${mobile ? "px-3 py-2" : "px-4 py-3"} bg-white border-t border-gray-200`}>
+      {imagePreview && (
+        <div className="mb-2 relative inline-block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imagePreview} alt="Preview" className="h-16 rounded-lg border border-gray-200" />
+          <button
+            onClick={clearAttachment}
+            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-900 text-white rounded-full text-xs flex items-center justify-center"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+      <div className="flex items-end gap-2">
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className={`${mobile ? "w-[44px] h-[44px]" : "px-2 py-2"} flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0`}
+          title="Attach image"
+        >
+          &#x1F4CE;
+        </button>
+        {mobile ? (
+          <input
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            placeholder={`Ask ${active?.designation || "agent"}...`}
+            className="flex-1 rounded-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 min-h-[44px]"
+          />
+        ) : (
+          <textarea
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            placeholder={`Ask ${active?.designation || "agent"}...`}
+            className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent min-h-[38px] max-h-[120px]"
+            rows={1}
+          />
+        )}
+        <button
+          onClick={handleSend}
+          disabled={chatSending || (!chatInput.trim() && !attachedImage)}
+          className={`${mobile ? "w-[44px] h-[44px] rounded-full" : "px-4 py-2 rounded-lg"} bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0`}
+        >
+          {chatSending ? "..." : mobile ? "\u27A4" : "Send"}
+        </button>
+      </div>
+      {!mobile && (
+        <div className="text-[10px] text-gray-400 mt-1">
+          Enter sends &middot; Shift+Enter for newline &middot; &#x1F4CE; attach image
+        </div>
+      )}
+    </div>
+  );
 
   // ── Render ──
 
   return (
     <div className="min-h-screen">
+      {FileInput}
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightboxUrl} alt="Full size" className="max-w-full max-h-full object-contain rounded-lg" />
+        </div>
+      )}
+
       {/* ── DESKTOP LAYOUT (>768px) ── */}
       <div className="hidden md:flex h-[calc(100vh-52px)]">
-        {/* LEFT SIDEBAR */}
-        <div className="w-[230px] border-r border-gray-200 bg-white flex flex-col flex-shrink-0">
-          {/* Brand */}
-          <div className="px-4 py-4 border-b border-gray-100">
+        {/* LEFT SIDEBAR — 200px */}
+        <div className="w-[200px] border-r border-gray-200 bg-white flex flex-col flex-shrink-0">
+          <div className="px-3 py-3 border-b border-gray-100">
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-gray-900">K<span className="text-gray-500">&#26666;</span></span>
               <span className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Sector Agent</span>
             </div>
           </div>
 
-          {/* Sector channels */}
           <div className="flex-1 overflow-y-auto py-2">
             <div className="px-3 mb-1">
               <span className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Sectors</span>
@@ -497,16 +646,13 @@ export default function SectorsPage() {
                 <button
                   key={agent.sector_key}
                   onClick={() => setActiveKey(agent.sector_key)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
                     isActive
                       ? "bg-gray-100 border-l-2 border-l-gray-900"
                       : "hover:bg-gray-50 border-l-2 border-l-transparent"
                   }`}
                 >
-                  <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: agent.colour }}
-                  />
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: agent.colour }} />
                   <div className="flex-1 min-w-0">
                     <div className={`text-xs font-semibold truncate ${isActive ? "text-gray-900" : "text-gray-600"}`}>
                       {agent.designation}
@@ -519,43 +665,33 @@ export default function SectorsPage() {
             })}
           </div>
 
-          {/* PM footer */}
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center gap-2">
+          {/* OC footer */}
+          <div className="px-3 py-3 border-t border-gray-100 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-xs text-gray-600 font-medium">PM Online</span>
+            <span className="text-xs text-gray-600 font-medium">OC Online</span>
           </div>
         </div>
 
-        {/* CENTRE FEED */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#f4f5f7]">
-          {/* Channel header */}
+        {/* CENTRE FEED — flex:1 min-w-[440px] */}
+        <div className="flex-1 flex flex-col min-w-[440px] bg-[#f4f5f7]">
           {active && (
             <div className="px-4 py-3 bg-white border-b border-gray-200 flex items-center gap-3">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs"
-                style={{ backgroundColor: active.colour }}
-              >
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ backgroundColor: active.colour }}>
                 {active.designation.charAt(0)}
               </div>
               <div>
-                <div className="text-sm font-semibold text-gray-900">
-                  {active.designation} &middot; {active.name}
-                </div>
-                <div className="text-[10px] text-gray-400">
-                  {active.company_count} companies &middot; Last sweep: {formatDate(active.last_sweep_at)}
-                </div>
+                <div className="text-sm font-semibold text-gray-900">{active.designation} &middot; {active.name}</div>
+                <div className="text-[10px] text-gray-400">{active.company_count} companies &middot; Last sweep: {formatDate(active.last_sweep_at)}</div>
               </div>
             </div>
           )}
 
-          {/* Stats bar */}
           {active && (
             <div className="px-4 py-2 bg-white/80 border-b border-gray-100">
               <StatsBar agent={active} />
             </div>
           )}
 
-          {/* Message feed */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
             {feedLoading ? (
               <div className="text-sm text-gray-400 text-center py-8">Loading feed...</div>
@@ -564,55 +700,23 @@ export default function SectorsPage() {
                 No messages yet. The sector agent will populate this feed after the next daily sweep.
               </div>
             ) : (
-              feedItems.map((item) => (
-                <div key={item.key}>{item.content}</div>
-              ))
+              feedItems.map((item) => <div key={item.key}>{item.content}</div>)
             )}
             <div ref={feedEndRef} />
           </div>
 
-          {/* Composer */}
-          <div className="px-4 py-3 bg-white border-t border-gray-200">
-            <div className="flex items-end gap-2">
-              <textarea
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder={`Ask ${active?.designation || "agent"}...`}
-                className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent min-h-[38px] max-h-[120px]"
-                rows={1}
-              />
-              <button
-                onClick={handleSend}
-                disabled={chatSending || !chatInput.trim()}
-                className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {chatSending ? "..." : "Send"}
-              </button>
-            </div>
-            <div className="text-[10px] text-gray-400 mt-1">
-              Enter sends &middot; Shift+Enter for newline
-            </div>
-          </div>
+          <Composer />
         </div>
 
-        {/* RIGHT PANEL */}
-        <div className="w-[270px] border-l border-gray-200 bg-white flex flex-col flex-shrink-0">
-          {/* Tabs */}
+        {/* RIGHT PANEL — 340px */}
+        <div className="w-[340px] border-l border-gray-200 bg-white flex flex-col flex-shrink-0">
           <div className="flex border-b border-gray-200">
             {(["agent", "sector", "coverage"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setRightTab(tab)}
                 className={`flex-1 px-2 py-2.5 text-xs font-medium capitalize transition-colors ${
-                  rightTab === tab
-                    ? "text-gray-900 border-b-2 border-gray-900"
-                    : "text-gray-400 hover:text-gray-600"
+                  rightTab === tab ? "text-gray-900 border-b-2 border-gray-900" : "text-gray-400 hover:text-gray-600"
                 }`}
               >
                 {tab === "sector" ? "Sector View" : tab}
@@ -620,60 +724,81 @@ export default function SectorsPage() {
             ))}
           </div>
 
-          {/* Tab content */}
           <div className="flex-1 overflow-y-auto p-4">
             {active && rightTab === "agent" && <AgentPanel agent={active} />}
 
-            {rightTab === "sector" && sectorView && (
+            {rightTab === "sector" && (
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  {stanceBadge(sectorView.stance)}
-                  {convictionStars(sectorView.conviction)}
-                </div>
+                {sectorView ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      {stanceBadge(sectorView.stance)}
+                      {convictionStars(sectorView.conviction)}
+                    </div>
 
-                <div>
-                  <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Thesis</h4>
-                  <p className="text-xs text-gray-700 leading-relaxed">{sectorView.thesisSummary}</p>
-                </div>
+                    <div>
+                      <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Thesis</h4>
+                      <p className="text-xs text-gray-700 leading-relaxed">{sectorView.thesisSummary}</p>
+                    </div>
 
-                {sectorView.valuationAssessment?.length > 0 && (
-                  <div>
-                    <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Valuation</h4>
-                    <ul className="space-y-0.5">
-                      {sectorView.valuationAssessment.slice(0, 4).map((v, i) => (
-                        <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
-                          <span className="text-blue-500 mt-0.5 flex-shrink-0">&#9679;</span>{v}
-                        </li>
-                      ))}
-                    </ul>
+                    {sectorView.keyDrivers?.length > 0 && (
+                      <div>
+                        <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Key Drivers</h4>
+                        <ul className="space-y-0.5">
+                          {sectorView.keyDrivers.slice(0, 3).map((d, i) => (
+                            <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
+                              <span className="text-green-500 mt-0.5 flex-shrink-0">+</span>{d}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {sectorView.keyRisks?.length > 0 && (
+                      <div>
+                        <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Key Risks</h4>
+                        <ul className="space-y-0.5">
+                          {sectorView.keyRisks.slice(0, 3).map((r, i) => (
+                            <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
+                              <span className="text-red-500 mt-0.5 flex-shrink-0">&ndash;</span>{r}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Divider + company list in Sector View tab */}
+                    <div className="border-t border-gray-200 pt-3 mt-3">
+                      <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Companies</h4>
+                      <div className="space-y-1">
+                        {active?.companies.map((c) => (
+                          <Link
+                            key={c.id}
+                            href={`/company/${c.id}`}
+                            className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-50 transition-colors"
+                          >
+                            <div>
+                              <span className="text-xs font-medium text-gray-900">{c.name}</span>
+                              <span className="text-[10px] text-gray-400 font-mono ml-1.5">{c.ticker}</span>
+                            </div>
+                            {stanceBadge(c.stance, true)}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-gray-400 pt-2 border-t border-gray-100">
+                      Updated: {formatDateTime(sectorView.lastUpdated)}
+                      {sectorView.lastUpdatedReason && (
+                        <div className="mt-0.5">Trigger: {sectorView.lastUpdatedReason}</div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-xs text-gray-400 text-center py-8">
+                    No sector view yet. Will be generated after the next sweep.
                   </div>
                 )}
-
-                {sectorView.convictionRationale?.length > 0 && (
-                  <div>
-                    <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Conviction Rationale</h4>
-                    <ul className="space-y-0.5">
-                      {sectorView.convictionRationale.slice(0, 4).map((c, i) => (
-                        <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
-                          <span className="text-gray-400 mt-0.5 flex-shrink-0">&#8227;</span>{c}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <div className="text-[10px] text-gray-400 pt-2 border-t border-gray-100">
-                  Updated: {formatDateTime(sectorView.lastUpdated)}
-                  {sectorView.lastUpdatedReason && (
-                    <div className="mt-0.5">Trigger: {sectorView.lastUpdatedReason}</div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {rightTab === "sector" && !sectorView && (
-              <div className="text-xs text-gray-400 text-center py-8">
-                No sector view yet. Will be generated after the next sweep.
               </div>
             )}
 
@@ -684,13 +809,9 @@ export default function SectorsPage() {
 
       {/* ── MOBILE LAYOUT (<=768px) ── */}
       <div className="md:hidden flex flex-col h-[calc(100vh-52px)]">
-        {/* Sector drawer overlay */}
         {drawerOpen && (
           <div className="fixed inset-0 z-50 flex">
-            <div
-              className="absolute inset-0 bg-black/30"
-              onClick={() => setDrawerOpen(false)}
-            />
+            <div className="absolute inset-0 bg-black/30" onClick={() => setDrawerOpen(false)} />
             <div className="relative w-72 bg-white h-full shadow-xl overflow-y-auto animate-slide-in-left">
               <div className="px-4 py-4 border-b border-gray-100">
                 <span className="text-sm font-bold text-gray-900">Sector Channels</span>
@@ -698,10 +819,7 @@ export default function SectorsPage() {
               {agents.map((agent) => (
                 <button
                   key={agent.sector_key}
-                  onClick={() => {
-                    setActiveKey(agent.sector_key);
-                    setDrawerOpen(false);
-                  }}
+                  onClick={() => { setActiveKey(agent.sector_key); setDrawerOpen(false); }}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left min-h-[44px] ${
                     agent.sector_key === activeKey ? "bg-gray-100" : "hover:bg-gray-50"
                   }`}
@@ -718,36 +836,27 @@ export default function SectorsPage() {
           </div>
         )}
 
-        {/* Top bar */}
         {active && (
           <div className="flex items-center px-3 py-2.5 bg-white border-b border-gray-200 min-h-[44px]">
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className="p-2 -ml-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            >
+            <button onClick={() => setDrawerOpen(true)} className="p-2 -ml-1 min-w-[44px] min-h-[44px] flex items-center justify-center">
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div className="flex-1 text-center">
-              <span className="text-sm font-semibold text-gray-900">
-                {active.designation} &middot; {active.name}
-              </span>
+              <span className="text-sm font-semibold text-gray-900">{active.designation} &middot; {active.name}</span>
             </div>
-            <div className="w-[44px]" /> {/* Spacer for centering */}
+            <div className="w-[44px]" />
           </div>
         )}
 
-        {/* Stats bar (mobile — compact scrollable) */}
         {active && mobileTab === "feed" && (
           <div className="px-3 py-1.5 bg-white/80 border-b border-gray-100 overflow-x-auto">
             <StatsBar agent={active} compact />
           </div>
         )}
 
-        {/* Active pane content */}
         <div className="flex-1 overflow-y-auto bg-[#f4f5f7]">
-          {/* FEED TAB */}
           {mobileTab === "feed" && (
             <div className="px-3 py-3 space-y-2">
               {feedLoading ? (
@@ -757,63 +866,23 @@ export default function SectorsPage() {
               ) : (
                 <>
                   {!showAllSweep && feedItems.length > mobileFeedItems.length && (
-                    <button
-                      onClick={() => setShowAllSweep(true)}
-                      className="w-full text-center text-xs text-blue-600 py-2 min-h-[44px]"
-                    >
+                    <button onClick={() => setShowAllSweep(true)} className="w-full text-center text-xs text-blue-600 py-2 min-h-[44px]">
                       Show all {feedItems.length} entries
                     </button>
                   )}
-                  {mobileFeedItems.map((item) => (
-                    <div key={item.key}>{item.content}</div>
-                  ))}
+                  {mobileFeedItems.map((item) => <div key={item.key}>{item.content}</div>)}
                 </>
               )}
               <div ref={feedEndRef} />
             </div>
           )}
 
-          {/* AGENT TAB */}
-          {mobileTab === "agent" && active && (
-            <div className="p-4">
-              <AgentPanel agent={active} />
-            </div>
-          )}
-
-          {/* COVERAGE TAB */}
-          {mobileTab === "coverage" && active && (
-            <div className="p-3">
-              <CoveragePanel agent={active} />
-            </div>
-          )}
+          {mobileTab === "agent" && active && <div className="p-4"><AgentPanel agent={active} /></div>}
+          {mobileTab === "coverage" && active && <div className="p-3"><CoveragePanel agent={active} /></div>}
         </div>
 
-        {/* Composer (above bottom nav) */}
-        <div className="px-3 py-2 bg-white border-t border-gray-200">
-          <div className="flex items-center gap-2">
-            <input
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder={`Ask ${active?.designation || "agent"}...`}
-              className="flex-1 rounded-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 min-h-[44px]"
-            />
-            <button
-              onClick={handleSend}
-              disabled={chatSending || !chatInput.trim()}
-              className="w-[44px] h-[44px] rounded-full bg-gray-900 text-white flex items-center justify-center disabled:opacity-40 transition-colors"
-            >
-              {chatSending ? "..." : "\u27A4"}
-            </button>
-          </div>
-        </div>
+        <Composer mobile />
 
-        {/* Bottom tab bar */}
         <div className="flex bg-white border-t border-gray-200">
           {([
             { key: "feed" as const, icon: "\uD83D\uDCAC", label: "Feed" },
@@ -824,9 +893,7 @@ export default function SectorsPage() {
               key={tab.key}
               onClick={() => setMobileTab(tab.key)}
               className={`flex-1 flex flex-col items-center py-2 min-h-[50px] transition-colors ${
-                mobileTab === tab.key
-                  ? "text-gray-900"
-                  : "text-gray-400"
+                mobileTab === tab.key ? "text-gray-900" : "text-gray-400"
               }`}
             >
               <span className="text-lg">{tab.icon}</span>

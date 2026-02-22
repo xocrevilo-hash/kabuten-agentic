@@ -1395,8 +1395,8 @@ KabutenOrchestrator
 
 **Agent roles:**
 
-- **KabutenOrchestrator** — top-level manager. Runs all 7 sector sweeps concurrently via `asyncio.gather`. Routes PM chat messages to the correct sector thread.
-- **SectorLeadAgent** (APEX / ORIENT / VOLT / INDRA / HELIX / PHOTON / FORGE) — one per sector. Orchestrates its CompanyCoverageAgents, synthesises findings into a sector view, escalates material findings for deep-dive analysis, maintains the persistent sector conversation thread, and converses with the portfolio manager.
+- **KabutenOrchestrator** — top-level manager. Runs all 7 sector sweeps concurrently via `asyncio.gather`. Routes OC chat messages to the correct sector thread.
+- **SectorLeadAgent** (APEX / ORIENT / VOLT / INDRA / HELIX / PHOTON / FORGE) — one per sector. Orchestrates its CompanyCoverageAgents, synthesises findings into a sector view, escalates material findings for deep-dive analysis, maintains the persistent sector conversation thread, and converses with OC.
 - **CompanyCoverageAgent** — one per company (48 total). Sub-agent invoked by its parent SectorLead. Returns structured JSON findings. Runs at `effort="low"` for routine sweeps, `effort="high"` for escalated deep-dives.
 
 **Sonnet 4.6 features in use:**
@@ -1417,8 +1417,8 @@ betas=["interleaved-thinking-2025-05-14", "context-1m-2025-08-07"]
 
 **Agent capabilities — all three are live from day one:**
 - **Memory:** Each agent's `_thread_history` accumulates every sweep, finding, and conversation across sessions. Persisted to Postgres after every sweep and chat, loaded on startup. Context compaction means the thread never hits a ceiling.
-- **Learning:** The full thread is passed on every API call. If the PM shared intelligence last week, the agent incorporates it into this week's synthesis automatically.
-- **Conversation:** PM can message any Sector Lead at any time via the chat composer. The `chat(sector_key, message)` method on `KabutenOrchestrator` routes it to the correct agent and appends the exchange to the persistent thread.
+- **Learning:** The full thread is passed on every API call. If the OC shared intelligence last week, the agent incorporates it into this week's synthesis automatically.
+- **Conversation:** OC can message any Sector Lead at any time via the chat composer. The `chat(sector_key, message)` method on `KabutenOrchestrator` routes it to the correct agent and appends the exchange to the persistent thread.
 
 ---
 
@@ -1472,11 +1472,11 @@ The page is redesigned from its current tab + card layout into a three-pane chat
 │ • ORIENT        │  - Date dividers              │ Agent profile    │
 │ • VOLT          │  - Sweep messages             │ Sector snapshot  │
 │ • INDRA         │  - Material finding cards     │ Coverage list    │
-│ • HELIX         │  - PM messages                │ My notes         │
+│ • HELIX         │  - OC messages                │ My notes         │
 │ • PHOTON        │  - Agent replies              │                  │
 │ • FORGE         │                               │                  │
 │                 │ Message composer              │                  │
-│ PM footer       │                               │                  │
+│ OC footer       │                               │                  │
 └─────────────────┴───────────────────────────────┴──────────────────┘
 ```
 
@@ -1496,8 +1496,8 @@ The page is redesigned from its current tab + card layout into a three-pane chat
 | Daily Sweep | Blue | Automatic, once per day |
 | Material Finding | Amber | Agent escalation (`finding_type=material`) |
 | Sector View | Green | Agent's synthesised sector view update |
-| PM Message | Navy | PM sends via composer |
-| Agent Response | Green | Agent reply to PM |
+| OC Message | Navy | OC sends via composer |
+| Agent Response | Green | Agent reply to OC |
 
 **Sweep message** — one row per company: Ticker · Finding badge (MATERIAL / INCREMENTAL / NONE) · Headline. Footer: agent's sector-level read.
 
@@ -1505,11 +1505,11 @@ The page is redesigned from its current tab + card layout into a three-pane chat
 
 **Stats bar** — Companies · Bullish · Neutral · Bearish · Last Material date.
 
-**Right panel tabs** — Agent (designation, last sweep), Sector View (posture, stars, conviction, material count), Coverage (all companies with BULL/NEUT/BEAR badges). Plus **My Notes** showing PM's most recent logged view for this sector.
+**Right panel tabs** — Agent (designation, last sweep), Sector View (posture, stars, conviction, material count), Coverage (all companies with BULL/NEUT/BEAR badges). Plus **My Notes** showing OC's most recent logged view for this sector.
 
-**Composer** — multi-line textarea, auto-resize. Hint: `Tag: @Ticker · Log view: /view · Ask: /ask`. Enter sends, Shift+Enter newlines. On send: append PM message, show agent "Thinking…", stream reply.
+**Composer** — multi-line textarea, auto-resize. Hint: `Tag: @Ticker · Log view: /view · Ask: /ask`. Enter sends, Shift+Enter newlines. On send: append OC message, show agent "Thinking…", stream reply.
 
-**Sidebar** — K株 brand mark, "SECTOR AGENT" sub-label. Seven channel items with colour-coded dot. Active sector: navy left border. Unread badge (red) for new material findings. PM footer with online status dot.
+**Sidebar** — K株 brand mark, "SECTOR AGENT" sub-label. Seven channel items with colour-coded dot. Active sector: navy left border. Unread badge (red) for new material findings. OC footer with online status dot.
 
 ---
 
@@ -1616,8 +1616,171 @@ await db.save_thread_history(sector_key, thread);
 - On startup, load thread histories from `sector_agent_threads` into each `SectorLeadAgent` via `load_thread_history(history)`.
 - The `sector_group` field on the `companies` table continues to be used for peer context injection into individual company sweeps (existing behaviour unchanged).
 - `sector_group` values for the 48 sector companies must map to the 7 `sector_key` values: `au_enterprise_software`, `china_digital_consumption`, `dc_power_cooling`, `india_it_services`, `memory_semis`, `networking_optics`, `semi_equipment`.
+- **Agent role clarity:** Each Sector Lead Agent synthesises Investment Views and Daily Sweep results from its member Company Analyst Agents. It does not conduct independent internet research — the Company Agents do that. The Sector Lead's job is synthesis and pattern recognition across those company-level findings.
 
 **Navigation:** The "Sectors" nav button in the sticky toolbar must show only the monochrome SVG building icon — **remove the 🏭 emoji**. Search for `🏭` in the navigation component and delete it. Keep the SVG icon and the word "Sectors".
+
+---
+
+#### Fix 1 — Thread Persistence (Conversations Must Survive Page Reload)
+
+**Problem:** OC's conversations with each Sector Agent disappear when the page is closed and reopened. The thread history is being held in React state only and lost on unmount.
+
+**Required behaviour:** Every message — whether a sweep result, OC message, or agent reply — must be saved to the database immediately and reloaded on every page open. The feed should look exactly as OC left it.
+
+**Implementation:**
+
+1. **On page mount**: call `GET /api/agents/status` which returns the current thread history for each sector. Populate the feed from the database, not from local state.
+
+2. **After every OC message + agent reply pair**: immediately persist the updated thread to `sector_agent_threads.thread_history` in Postgres. Do not batch — persist after every single exchange. Either add `POST /api/agents/persist` or fold persistence into `POST /api/agents/chat` (write to DB before returning the reply).
+
+3. **After every sweep**: confirm the full thread (not just the synthesis) is written to `sector_agent_threads.thread_history`.
+
+4. **Never use `localStorage` or session state** as the primary store for thread history. Postgres is the source of truth.
+
+5. **Feed hydration on sector switch**: when OC clicks a different sector in the sidebar, fetch that sector's thread from the DB and render it. Do not hold all 7 threads in memory simultaneously — fetch on demand per sector.
+
+```typescript
+// New or extended route — persist thread after every chat exchange
+POST /api/agents/persist
+body: { sector_key: string, thread_history: Message[] }
+response: { ok: true }
+```
+
+---
+
+#### Fix 2 — Current Date Injection into Agent System Prompts
+
+**Problem:** Agents reason as if it is end-2024 because no current date is provided at runtime.
+
+**Required fix:** Inject the current date dynamically into the base system prompt of every agent — both `SectorLeadAgent` and `CompanyCoverageAgent` — on every API call.
+
+In `sector_agent.py` and `company_agent.py`, prepend the following to every system prompt before the API call. This must be computed at call time (not hardcoded) so it reflects the actual date of each sweep or chat:
+
+```python
+from datetime import date
+
+def date_header() -> str:
+    today = date.today()
+    return (
+        f"Today's date is {today.strftime('%A, %d %B %Y')}. "
+        f"You are operating in {today.year}. "
+        "Your training has a knowledge cutoff, but you have access to web search "
+        "and to daily sweep data collected up to today. "
+        f"Always reason as if it is {today.year}, not 2024 or any prior year. "
+        "If OC asks what year it is, tell them the correct year based on this header."
+    )
+```
+
+Prepend `date_header()` to the system prompt string on every API call — sweeps, deep-dives, synthesis, and chat. Do not store it; recompute each time.
+
+---
+
+#### Fix 3 — UI Layout Adjustments
+
+**Updated pane widths:**
+
+| Pane | Old width | New width |
+|---|---|---|
+| Left sidebar | 230px | 200px |
+| Centre feed | flex: 1 | flex: 1, min-width: 440px |
+| Right panel | 270px | 340px |
+
+**Right panel — Sector View tab must now show (in order):**
+
+1. Posture badge (↑ Bullish / → Neutral / ↓ Bearish) + conviction stars
+2. **Thesis** — full text, no truncation, wraps naturally in the wider 340px panel
+3. **Key Drivers** — up to 3 bullet items with `+` prefix (green)
+4. **Key Risks** — up to 3 bullet items with `–` prefix (red)
+5. Thin horizontal divider
+6. **Companies in this sector** — compact list at the bottom of the panel showing every member company as a row: Company name · Ticker (mono font) · signal badge (`↑ BULL` / `→ NEUT` / `↓ BEAR`). Each row tappable → navigates to company page.
+
+The Coverage tab remains as before (full-width company list), but the Sector View tab now also shows the company list at the bottom so OC can see thesis + coverage without switching tabs.
+
+---
+
+#### Fix 4 — Image Attachments in Thread
+
+OC must be able to attach images (charts, screenshots, research graphics) to messages. Images persist in the thread history and the agent can reason about them.
+
+**Composer — desktop and mobile:**
+- Add image attach button (📎) to the composer, left of the send button
+- On click: opens native file picker. Accepts: `image/png`, `image/jpeg`, `image/webp`, `image/gif`
+- Selected image shows as a thumbnail preview inside the composer before send
+- OC can add optional text alongside the image
+- On send: image + text sent as one message
+
+**Message rendering:**
+- OC messages with images display the image inline in the feed, full width of the message bubble, max-height `320px`
+- Image appears above the text if both are present
+- Click to expand to full size (lightbox)
+
+**Storage:**
+- On send, upload the image file to Supabase Storage bucket `sector-thread-images`
+- Store the returned public URL in the message content object
+- Thread history in Postgres stores the URL, not raw bytes
+- On thread reload, images render from the URL
+
+**Agent vision — API format:**
+
+When OC sends a message containing an image, pass it to the Sector Lead Agent as a multimodal content array:
+
+```python
+{
+    "role": "user",
+    "content": [
+        {
+            "type": "image",
+            "source": {
+                "type": "url",
+                "url": "<supabase_storage_public_url>"
+            }
+        },
+        {
+            "type": "text",
+            "text": "<OC message text, may be empty string>"
+        }
+    ]
+}
+```
+
+The agent can see and reason about the image. Subsequent messages in the thread may reference it ("the chart you shared earlier shows...").
+
+**Mobile:** Image attach button visible in mobile composer. Tapping opens native photo picker or camera. Inline image display constrained to screen width.
+
+---
+
+#### Fix 5 — OC Identity (Replaces All "PM" References)
+
+The user is **OC** throughout — in agent system prompts, UI labels, message attribution, and all copy. No reference to "PM" or "portfolio manager" anywhere.
+
+**System prompt template in `config.py` / `sector_agent.py`:**
+
+```python
+SYSTEM_PROMPT_BASE = """You are {designation}, a senior equity research analyst
+covering the {sector_name} sector for Kabuten.
+
+You report directly to OC, the portfolio orchestrator and sole user of this platform.
+Address OC by name in your responses — for example:
+  "OC, the latest sweep data suggests..."
+  "In my view, OC, this is a material development..."
+  "OC, I'd flag the following risk..."
+
+Your role is to synthesise Daily Sweep data and Investment Views from the individual
+Company Analyst Agents covering your sector, identify sector-level patterns, and
+maintain a living sector thesis that OC can act on.
+"""
+```
+
+**UI labels — all instances:**
+
+| Location | Old label | New label |
+|---|---|---|
+| Sidebar footer | PM | OC |
+| Message attribution | PM | OC |
+| Right panel notes section | My Notes | OC's Notes |
+| Mobile composer | (unchanged) | `Ask [DESIGNATION]...` |
+| Thread message bubble header | PM | OC |
 
 ---
 
@@ -1666,12 +1829,12 @@ The three-pane desktop layout collapses into a single-pane view with a persisten
 
 | Tab | Icon | Content |
 |---|---|---|
-| Feed | 💬 | The message feed — sweep cards, material findings, PM messages, agent replies |
+| Feed | 💬 | The message feed — sweep cards, material findings, OC messages, agent replies |
 | Agent | 🤖 | Agent profile + current sector view (posture, conviction, thesis, key drivers/risks) |
 | Coverage | 📋 | Full company list with BULL/NEUT/BEAR badges, each tappable to company page |
 
 **Feed tab (default):**
-- Full-width scrollable message feed — same message types as desktop (Sweep, Material Finding, Sector View, PM, Agent Response)
+- Full-width scrollable message feed — same message types as desktop (Sweep, Material Finding, Sector View, OC, Agent Response)
 - Cards stack vertically, full width, with slightly reduced padding
 - Date dividers between days
 - Material Finding cards retain the amber left accent bar
@@ -1681,7 +1844,7 @@ The three-pane desktop layout collapses into a single-pane view with a persisten
 - Single-line input that expands to multi-line on focus
 - Placeholder: `Ask APEX...` (agent name changes per active sector)
 - Send button `➤` right-aligned
-- On send: appends PM message to feed, shows "Thinking…" indicator, streams agent reply
+- On send: appends OC message to feed, shows "Thinking…" indicator, streams agent reply
 - Supports `/view` and `/ask` prefix commands
 - No attach button on mobile — keep it simple
 
@@ -1690,7 +1853,7 @@ The three-pane desktop layout collapses into a single-pane view with a persisten
 - Posture badge (↑ Bullish / → Neutral / ↓ Bearish) + conviction stars
 - Thesis text (full, scrollable)
 - Key Drivers (up to 3) and Key Risks (up to 3) as compact list items
-- "My Notes" section at bottom — PM's most recent logged view for this sector
+- "My Notes" section at bottom — OC's most recent logged view for this sector
 
 **Coverage tab:**
 - Vertically stacked list (not grid) of all companies in the sector
@@ -2559,7 +2722,7 @@ kabuten-agentic/
 - Added 4 new API route groups: `ask/`, `podcasts/`, `heatmap/`, `auth/`
 - Added `portfolio.ts` — portfolio engine (top-20 selection, returns, rebalancing, NAV)
 - Added `TopConviction.tsx`, `PortfolioReturns.tsx`, `PortfolioDetails.tsx`, `PortfolioChangeLog.tsx` — portfolio components
-- Added `agents/` Python package — multi-agent sector system (APEX/ORIENT/VOLT/INDRA/HELIX/PHOTON/FORGE) with persistent threads, context compaction, and PM chat
+- Added `agents/` Python package — multi-agent sector system (APEX/ORIENT/VOLT/INDRA/HELIX/PHOTON/FORGE) with persistent threads, context compaction, and OC chat
 - Added `/portfolio` page route + `portfolio/` API route group (holdings, rebalance, snapshot)
 
 ---

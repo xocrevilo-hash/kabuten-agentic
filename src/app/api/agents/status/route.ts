@@ -18,24 +18,37 @@ const AGENTS: Record<string, { designation: string; name: string; colour: string
 
 /**
  * GET /api/agents/status
- * Returns status of all 7 sector agents with thread length, last sweep, and company data.
+ * Returns status of all 7 sector agents including full thread_history for feed hydration.
+ * ?sector_key=X — returns thread_history only for that sector (on-demand per sector).
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { getAllAgentThreads, getCompanies, getAllLatestSyntheses } = await import("@/lib/db");
+    const { searchParams } = new URL(request.url);
+    const singleKey = searchParams.get("sector_key");
+
+    const { getAllAgentThreads, getAgentThread, getCompanies, getAllLatestSyntheses } = await import("@/lib/db");
 
     let threads: Record<string, unknown>[] = [];
     let syntheses: Record<string, unknown>[] = [];
     let allCompanies: Record<string, unknown>[] = [];
 
     try {
-      [threads, syntheses, allCompanies] = await Promise.all([
-        getAllAgentThreads(),
-        getAllLatestSyntheses(),
-        getCompanies(),
-      ]);
+      if (singleKey) {
+        // On-demand: only fetch the one sector thread
+        const thread = await getAgentThread(singleKey);
+        threads = thread ? [thread] : [];
+        [syntheses, allCompanies] = await Promise.all([
+          getAllLatestSyntheses(),
+          getCompanies(),
+        ]);
+      } else {
+        [threads, syntheses, allCompanies] = await Promise.all([
+          getAllAgentThreads(),
+          getAllLatestSyntheses(),
+          getCompanies(),
+        ]);
+      }
     } catch {
-      // Tables may not exist yet — return defaults
       allCompanies = [];
     }
 
@@ -54,7 +67,11 @@ export async function GET() {
       companyMap[c.id as string] = c;
     }
 
-    const agents = Object.entries(AGENTS).map(([key, agent]) => {
+    const agentEntries = singleKey
+      ? [[singleKey, AGENTS[singleKey]] as const].filter(([, v]) => v)
+      : Object.entries(AGENTS);
+
+    const agents = agentEntries.map(([key, agent]) => {
       const thread = threadMap[key];
       const synth = synthMap[key];
       const companies = agent.companyIds
@@ -89,6 +106,8 @@ export async function GET() {
         posture: (synth?.posture as string) || null,
         conviction: (synth?.conviction as number) || null,
         companies,
+        // Return full thread_history for feed hydration
+        thread_history: Array.isArray(threadHistory) ? threadHistory : [],
       };
     });
 
