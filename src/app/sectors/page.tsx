@@ -515,7 +515,11 @@ export default function SectorsPage() {
         <>
           <div>
             <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Thesis</h4>
-            <p className="text-xs text-gray-700 leading-relaxed">{sectorView.thesisSummary}</p>
+            {sectorView.thesisSummary ? (
+              <p className="text-xs text-gray-700 leading-relaxed">{sectorView.thesisSummary}</p>
+            ) : (
+              <p className="text-xs text-gray-400 italic">No sweep data yet — thesis will populate after the first sector sweep.</p>
+            )}
           </div>
           {sectorView.keyDrivers?.length > 0 && (
             <div>
@@ -815,8 +819,8 @@ export default function SectorsPage() {
           <SectorComposer activeDesignation={active?.designation || "agent"} chatSending={chatSending} onSend={handleSend} />
         </div>
 
-        {/* RIGHT PANEL — 25vw with min/max */}
-        <div className="border-l border-gray-200 bg-white flex flex-col flex-shrink-0" style={{ width: "calc(25vw)", minWidth: "300px", maxWidth: "380px" }}>
+        {/* RIGHT PANEL — 1/3 page width */}
+        <div className="border-l border-gray-200 bg-white flex flex-col flex-shrink-0" style={{ width: "calc(33.333vw)", minWidth: "340px", maxWidth: "480px" }}>
           <div className="flex border-b border-gray-200">
             {(["agent", "sector", "coverage"] as const).map((tab) => (
               <button
@@ -836,9 +840,9 @@ export default function SectorsPage() {
 
             {rightTab === "sector" && (
               <div className="h-full flex flex-col">
-                {sectorView ? (
-                  <>
-                    <div className="flex-shrink-0 space-y-4">
+                <div className="flex-shrink-0 space-y-4">
+                  {sectorView ? (
+                    <>
                       <div className="flex items-center gap-2">
                         {stanceBadge(sectorView.stance)}
                         {convictionStars(sectorView.conviction)}
@@ -846,7 +850,11 @@ export default function SectorsPage() {
 
                       <div>
                         <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Thesis</h4>
-                        <p className="text-xs text-gray-700 leading-relaxed">{sectorView.thesisSummary}</p>
+                        {sectorView.thesisSummary ? (
+                          <p className="text-xs text-gray-700 leading-relaxed">{sectorView.thesisSummary}</p>
+                        ) : (
+                          <p className="text-xs text-gray-400 italic">No sweep data yet — thesis will populate after the first sector sweep.</p>
+                        )}
                       </div>
 
                       {sectorView.keyDrivers?.length > 0 && (
@@ -874,47 +882,47 @@ export default function SectorsPage() {
                           </ul>
                         </div>
                       )}
-                    </div>
 
-                    {/* Divider + scrollable company list */}
-                    <div className="border-t border-gray-200 pt-3 mt-3 flex-1 min-h-0 flex flex-col">
-                      <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2 flex-shrink-0">Companies</h4>
-                      <div className="flex-1 overflow-y-auto space-y-1">
-                        {active?.companies.map((c) => {
-                          const signalLabel = c.stance === "bullish" ? "BULL" : c.stance === "bearish" ? "BEAR" : "NEUT";
-                          const signalColor = c.stance === "bullish" ? "text-green-700 bg-green-50 border-green-200" : c.stance === "bearish" ? "text-red-700 bg-red-50 border-red-200" : "text-amber-700 bg-amber-50 border-amber-200";
-                          const signalArrow = c.stance === "bullish" ? "\u2191" : c.stance === "bearish" ? "\u2193" : "\u2192";
-                          return (
-                            <Link
-                              key={c.id}
-                              href={`/company/${c.id}`}
-                              className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-50 transition-colors"
-                            >
-                              <div>
-                                <span className="text-xs font-medium text-gray-900">{c.name}</span>
-                                <span className="text-[10px] text-gray-400 font-mono ml-1.5">{c.ticker}</span>
-                              </div>
-                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${signalColor}`}>
-                                {signalArrow} {signalLabel}
-                              </span>
-                            </Link>
-                          );
-                        })}
+                      <div className="text-[10px] text-gray-400 pt-2 border-t border-gray-100">
+                        Updated: {formatDateTime(sectorView.lastUpdated)}
+                        {sectorView.lastUpdatedReason && (
+                          <div className="mt-0.5">Trigger: {sectorView.lastUpdatedReason}</div>
+                        )}
                       </div>
+                    </>
+                  ) : (
+                    <div>
+                      <p className="text-xs text-gray-400 italic">No sweep data yet — thesis will populate after the first sector sweep.</p>
                     </div>
+                  )}
+                </div>
 
-                    <div className="text-[10px] text-gray-400 pt-2 border-t border-gray-100 flex-shrink-0">
-                      Updated: {formatDateTime(sectorView.lastUpdated)}
-                      {sectorView.lastUpdatedReason && (
-                        <div className="mt-0.5">Trigger: {sectorView.lastUpdatedReason}</div>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-xs text-gray-400 text-center py-8">
-                    No sector view yet. Will be generated after the next sweep.
+                {/* Company list — always visible from companies table */}
+                <div className="border-t border-gray-200 pt-3 mt-3 flex-1 min-h-0 flex flex-col">
+                  <h4 className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2 flex-shrink-0">Companies</h4>
+                  <div className="flex-1 overflow-y-auto space-y-1">
+                    {active?.companies.map((c) => {
+                      const signalLabel = c.stance === "bullish" ? "BULL" : c.stance === "bearish" ? "BEAR" : "NEUT";
+                      const signalColor = c.stance === "bullish" ? "text-green-700 bg-green-50 border-green-200" : c.stance === "bearish" ? "text-red-700 bg-red-50 border-red-200" : "text-amber-700 bg-amber-50 border-amber-200";
+                      const signalArrow = c.stance === "bullish" ? "\u2191" : c.stance === "bearish" ? "\u2193" : "\u2192";
+                      return (
+                        <Link
+                          key={c.id}
+                          href={`/company/${c.id}`}
+                          className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-50 transition-colors"
+                        >
+                          <div>
+                            <span className="text-xs font-medium text-gray-900">{c.name}</span>
+                            <span className="text-[10px] text-gray-400 font-mono ml-1.5">{c.ticker}</span>
+                          </div>
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${signalColor}`}>
+                            {signalArrow} {signalLabel}
+                          </span>
+                        </Link>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
               </div>
             )}
 

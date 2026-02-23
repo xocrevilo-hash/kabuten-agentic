@@ -497,7 +497,7 @@ export async function recordHeatmapKeyword(entry: {
       history.reduce((sum: number, h: Record<string, unknown>) => sum + ((h.total_views as number) || 0), 0) / history.length
     );
 
-    if (sevenDayAvg > 0) {
+    if (sevenDayAvg > 0 && entry.totalViews > 0) {
       const ratio = entry.totalViews / sevenDayAvg;
       // Formula from architecture doc
       heatScore = Math.min(100, Math.max(0, Math.round(50 + (ratio - 1) * 45)));
