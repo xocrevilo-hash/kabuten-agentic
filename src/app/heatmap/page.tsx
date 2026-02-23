@@ -61,12 +61,14 @@ interface KeywordData {
   keyword: string;
   category: string;
   heatScore: number;
+  colourHex?: string;    // precomputed by cron sweep; overrides derived colour when present
   totalViews: number;
   top3Views: number[];
   sevenDayAvg: number;
   trend: string;
   delta: number;
   scanDate: string;
+  source?: string;       // 'claude_websearch' | 'heatmap_snapshots'
 }
 
 type ScanState = "disconnected" | "idle" | "running" | "complete";
@@ -126,6 +128,7 @@ export default function SocialHeatmapPage() {
   const [scanState, setScanState] = useState<ScanState>("disconnected");
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0, keyword: "" });
   const [lastScan, setLastScan] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<string | null>(null);
   const [isBaseline, setIsBaseline] = useState(true);
   const [totalDays, setTotalDays] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -143,6 +146,7 @@ export default function SocialHeatmapPage() {
         setLastScan(data.lastScan || null);
         setIsBaseline(data.isBaseline ?? true);
         setTotalDays(data.totalDays || 0);
+        setDataSource(data.source || null);
       }
     } catch {
       // ignore
@@ -294,10 +298,13 @@ export default function SocialHeatmapPage() {
             </button>
             {lastScan && (
               <span className="text-xs text-gray-400">
-                Last: {new Date(lastScan).toLocaleDateString("en-GB", {
-                  day: "2-digit", month: "short",
+                Last updated: {new Date(lastScan).toLocaleDateString("en-GB", {
+                  day: "2-digit", month: "short", year: "numeric",
                   hour: "2-digit", minute: "2-digit",
                 })}
+                {dataSource === "claude_websearch" && (
+                  <span className="ml-1 text-gray-300">&middot; AI sweep</span>
+                )}
               </span>
             )}
           </div>
@@ -437,11 +444,18 @@ export default function SocialHeatmapPage() {
                         ? "border-gray-900 ring-1 ring-gray-900"
                         : "border-gray-100"
                     }`}
-                    style={{ backgroundColor: getTileBgColor(kw.heatScore) }}
+                    style={{
+                      backgroundColor: kw.colourHex
+                        ? `${kw.colourHex}22`  // 13% opacity tint from the precomputed hex
+                        : getTileBgColor(kw.heatScore)
+                    }}
                   >
                     <p className="text-sm font-medium text-gray-800 mb-1 truncate">{kw.keyword}</p>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${getScoreColor(kw.heatScore)} ${getScoreTextColor(kw.heatScore)}`}>
+                      <span
+                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${kw.colourHex ? "" : getScoreColor(kw.heatScore)} ${getScoreTextColor(kw.heatScore)}`}
+                        style={kw.colourHex ? { backgroundColor: kw.colourHex } : undefined}
+                      >
                         {kw.heatScore}
                       </span>
                       <span className={`text-xs font-semibold ${getDeltaColor(kw.delta)}`}>

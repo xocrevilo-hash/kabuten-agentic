@@ -238,6 +238,25 @@ export async function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_ss_synthesised ON sector_syntheses(synthesised_at DESC)
   `;
 
+  // Heatmap results table — written by the daily cron sweep (Claude web search)
+  await sql`
+    CREATE TABLE IF NOT EXISTS heatmap_results (
+      id SERIAL PRIMARY KEY,
+      keyword TEXT NOT NULL,
+      category TEXT DEFAULT 'uncategorized',
+      ticker TEXT,
+      score NUMERIC NOT NULL DEFAULT 50,
+      colour_hex TEXT NOT NULL DEFAULT '#d1d5db',
+      volume INTEGER DEFAULT 0,
+      source TEXT DEFAULT 'claude_websearch',
+      swept_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (keyword, ticker)
+    )
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_heatmap_results_swept ON heatmap_results(swept_at DESC)
+  `;
+
   // Seed thread rows for all 17 agents
   const agentSeeds = [
     ['au_enterprise_software', 'APEX'],
@@ -640,6 +659,51 @@ export async function getHeatmapDayCount() {
     SELECT COUNT(DISTINCT snapshot_date) as count FROM heatmap_snapshots
   `;
   return rows[0]?.count || 0;
+}
+
+/**
+ * Upsert a single keyword result into heatmap_results (written by daily cron).
+ */
+export async function upsertHeatmapResult(entry: {
+  keyword: string;
+  category: string;
+  score: number;
+  colourHex: string;
+  volume: number;
+  source: string;
+}) {
+  const sql = getDb();
+  await sql`
+    INSERT INTO heatmap_results (keyword, category, score, colour_hex, volume, source, swept_at)
+    VALUES (
+      ${entry.keyword},
+      ${entry.category},
+      ${entry.score},
+      ${entry.colourHex},
+      ${entry.volume},
+      ${entry.source},
+      NOW()
+    )
+    ON CONFLICT (keyword, ticker) DO UPDATE SET
+      category   = EXCLUDED.category,
+      score      = EXCLUDED.score,
+      colour_hex = EXCLUDED.colour_hex,
+      volume     = EXCLUDED.volume,
+      source     = EXCLUDED.source,
+      swept_at   = EXCLUDED.swept_at
+  `;
+}
+
+/**
+ * Get all heatmap_results rows, ordered by score descending.
+ * Returns null if the table is empty (caller falls back to heatmap_snapshots).
+ */
+export async function getLatestHeatmapResults() {
+  const sql = getDb();
+  const rows = await sql`
+    SELECT * FROM heatmap_results ORDER BY score DESC
+  `;
+  return rows as Array<Record<string, unknown>>;
 }
 
 export async function getHeatmapHistory(keyword: string, days = 7) {
