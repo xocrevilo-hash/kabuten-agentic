@@ -17,9 +17,12 @@ export async function GET() {
     const cronRows = await getLatestHeatmapResults();
 
     if (cronRows.length > 0) {
+      // Neon returns TIMESTAMPTZ as Date objects — convert safely
+      const toIso = (v: unknown): string => (v instanceof Date ? v.toISOString() : String(v));
+
       // Compute swept_at from the most recently swept row
       const latestSweptAt = cronRows.reduce((latest, r) => {
-        const t = new Date(r.swept_at as string).getTime();
+        const t = new Date(toIso(r.swept_at)).getTime();
         return t > latest ? t : latest;
       }, 0);
 
@@ -33,7 +36,7 @@ export async function GET() {
         sevenDayAvg: 0,
         trend: Number(r.score) >= 55 ? "heating" : Number(r.score) <= 45 ? "cooling" : "steady",
         delta: 0,
-        scanDate: (r.swept_at as string).split("T")[0],
+        scanDate: toIso(r.swept_at).split("T")[0],
         source: (r.source || "claude_websearch") as string,
       }));
 
