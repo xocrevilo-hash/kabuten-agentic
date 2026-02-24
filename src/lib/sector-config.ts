@@ -23,7 +23,7 @@ export const SECTORS: SectorDefinition[] = [
   {
     name: "Data-centre Power & Cooling",
     label: "DC Power & Cooling",
-    companyIds: ["3324", "2308", "6501", "VST", "2301"],
+    companyIds: ["3324", "2308", "6501", "VRT", "2301"],
   },
   {
     name: "India IT Services",

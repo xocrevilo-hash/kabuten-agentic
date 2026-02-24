@@ -684,7 +684,7 @@ export async function upsertHeatmapResult(entry: {
       ${entry.source},
       NOW()
     )
-    ON CONFLICT (keyword, ticker) DO UPDATE SET
+    ON CONFLICT (keyword) DO UPDATE SET
       category   = EXCLUDED.category,
       score      = EXCLUDED.score,
       colour_hex = EXCLUDED.colour_hex,
@@ -701,9 +701,14 @@ export async function upsertHeatmapResult(entry: {
 export async function getLatestHeatmapResults() {
   const sql = getDb();
   const rows = await sql`
-    SELECT * FROM heatmap_results ORDER BY score DESC
+    SELECT DISTINCT ON (keyword) *
+    FROM heatmap_results
+    ORDER BY keyword, swept_at DESC, score DESC
   `;
-  return rows as Array<Record<string, unknown>>;
+  // Re-sort by score descending for the heatmap display
+  return (rows as Array<Record<string, unknown>>).sort(
+    (a, b) => Number(b.score) - Number(a.score)
+  );
 }
 
 export async function getHeatmapHistory(keyword: string, days = 7) {

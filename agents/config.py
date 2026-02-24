@@ -95,7 +95,7 @@ SECTORS: dict[str, SectorDef] = {
             CompanyDef("3324", "TWSE", "Auras Technology"),
             CompanyDef("2308", "TWSE", "Delta Electronics"),
             CompanyDef("6501", "TSE", "Hitachi"),
-            CompanyDef("VST", "NYSE", "Vistra Corp"),
+            CompanyDef("VRT", "NYSE", "Vertiv Holdings"),
             CompanyDef("2301", "TWSE", "Lite-On Technology"),
         ],
         system_context=(
