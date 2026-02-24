@@ -98,7 +98,7 @@ export const SECTORS: SectorDefinition[] = [
   {
     name: "Server ODMs",
     label: "Server ODMs",
-    companyIds: ["2317", "2382", "3231"],
+    companyIds: ["2317", "2382_TW", "3231"],
   },
 ];
 
