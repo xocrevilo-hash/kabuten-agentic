@@ -143,10 +143,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { getAgentThread, saveAgentThread } = await import("@/lib/db");
+    const { getAgentThread, saveAgentThread, getSectorBrief } = await import("@/lib/db");
 
-    // Load thread history from Postgres
-    const thread = await getAgentThread(sector_key);
+    // Load sector brief (investment mandate) and thread history in parallel
+    const [brief, thread] = await Promise.all([
+      getSectorBrief(sector_key).catch(() => null),
+      getAgentThread(sector_key),
+    ]);
     const threadHistory: unknown[] = Array.isArray(thread?.thread_history) ? [...(thread.thread_history as unknown[])] : [];
 
     // Build messages for Claude from recent thread history
@@ -191,9 +194,22 @@ export async function POST(request: Request) {
       chatMessages.push({ role: "user", content: message });
     }
 
-    // Build system prompt with date header + OC identity
+    // Build investment mandate block from sector brief (if available)
+    let mandateBlock = "";
+    if (brief) {
+      mandateBlock =
+        "Your investment mandate for this sector:\n" +
+        `1. ${brief.bullet_1}\n` +
+        `2. ${brief.bullet_2}\n` +
+        `3. ${brief.bullet_3}\n` +
+        `4. ${brief.bullet_4}\n` +
+        `5. ${brief.bullet_5}\n\n`;
+    }
+
+    // Build system prompt with date header + investment mandate + OC identity
     const systemPrompt =
       dateHeader() +
+      mandateBlock +
       `You are ${agentCtx.designation}, a senior equity research analyst ` +
       `covering the ${agentCtx.name} sector for Kabuten.\n\n` +
       "You report directly to OC, the portfolio orchestrator and sole user of this platform. " +

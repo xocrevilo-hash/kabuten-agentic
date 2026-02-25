@@ -65,6 +65,16 @@ interface ThreadMessage {
   company_results?: Array<{ company_name: string; severity: string; summary: string }>;
 }
 
+interface SectorBriefData {
+  sector_key: string;
+  bullet_1: string;
+  bullet_2: string;
+  bullet_3: string;
+  bullet_4: string;
+  bullet_5: string;
+  updated_at: string | null;
+}
+
 // ── Helpers ──
 
 function formatDate(dateStr: string | null) {
@@ -247,6 +257,116 @@ function SectorComposer({ activeDesignation, chatSending, onSend, mobile = false
   );
 }
 
+// ── SectorBriefPanel — module-level component for stable React identity ──
+// Defined outside SectorsPage to prevent unmount/remount when editing inputs.
+
+interface SectorBriefPanelProps {
+  agent: AgentStatus;
+  briefData: SectorBriefData | null;
+  briefLoading: boolean;
+  briefEditing: boolean;
+  briefDraftBullets: string[];
+  briefSaving: boolean;
+  briefSaved: boolean;
+  onEdit: () => void;
+  onBulletChange: (idx: number, value: string) => void;
+  onSave: () => void;
+}
+
+function SectorBriefPanel({
+  agent,
+  briefData,
+  briefLoading,
+  briefEditing,
+  briefDraftBullets,
+  briefSaving,
+  briefSaved,
+  onEdit,
+  onBulletChange,
+  onSave,
+}: SectorBriefPanelProps) {
+  const readBullets = briefData
+    ? [briefData.bullet_1, briefData.bullet_2, briefData.bullet_3, briefData.bullet_4, briefData.bullet_5]
+    : ["", "", "", "", ""];
+
+  return (
+    <div className="space-y-4">
+      {/* Agent identity */}
+      <div className="flex items-center gap-3">
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+          style={{ backgroundColor: agent.colour }}
+        >
+          {agent.designation.charAt(0)}
+        </div>
+        <div>
+          <div className="font-semibold text-gray-900 text-sm">{agent.designation}</div>
+          <div className="text-[11px] text-gray-400">{agent.name}</div>
+          <div className="text-[10px] text-gray-500">Senior Analyst</div>
+          <div className="text-[10px] text-gray-400 mt-0.5">Last sweep: {formatDateTime(agent.last_sweep_at)}</div>
+        </div>
+      </div>
+
+      {/* Investment Mandate */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-200">
+          <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest font-mono">
+            Investment Mandate
+          </span>
+          {!briefEditing ? (
+            <button
+              onClick={onEdit}
+              disabled={briefLoading}
+              className="text-gray-400 hover:text-gray-600 transition-colors p-0.5 leading-none text-sm disabled:opacity-40"
+              title="Edit mandate"
+              aria-label="Edit investment mandate"
+            >
+              ✏️
+            </button>
+          ) : (
+            <button
+              onClick={onSave}
+              disabled={briefSaving}
+              className="text-[11px] px-2.5 py-1 bg-gray-900 text-white rounded font-medium hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            >
+              {briefSaving ? "Saving…" : "Save"}
+            </button>
+          )}
+        </div>
+        <div className="px-3 py-2.5 space-y-2">
+          {briefSaved && (
+            <div className="text-[10px] text-green-600 font-medium flex items-center gap-1">
+              <span>✓</span> Saved
+            </div>
+          )}
+          {briefLoading ? (
+            <div className="text-xs text-gray-400 py-1">Loading mandate…</div>
+          ) : (
+            <ul className="space-y-2">
+              {(briefEditing ? briefDraftBullets : readBullets).map((bullet, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-gray-400 text-[11px] mt-0.5 flex-shrink-0 font-mono">{idx + 1}.</span>
+                  {briefEditing ? (
+                    <input
+                      value={bullet}
+                      onChange={(e) => onBulletChange(idx, e.target.value)}
+                      className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-transparent min-h-[30px] bg-white"
+                    />
+                  ) : (
+                    <span className="text-xs text-gray-700 leading-relaxed">
+                      {bullet || <span className="text-gray-400 italic">No mandate set</span>}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Component ──
 
 export default function SectorsPage() {
@@ -261,7 +381,15 @@ export default function SectorsPage() {
   const [feedLoading, setFeedLoading] = useState(false);
 
   // Right panel tab
-  const [rightTab, setRightTab] = useState<"agent" | "sector" | "coverage">("agent");
+  const [rightTab, setRightTab] = useState<"brief" | "sector" | "coverage">("brief");
+
+  // Sector brief state
+  const [briefData, setBriefData] = useState<SectorBriefData | null>(null);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const [briefEditing, setBriefEditing] = useState(false);
+  const [briefDraftBullets, setBriefDraftBullets] = useState<string[]>(["", "", "", "", ""]);
+  const [briefSaving, setBriefSaving] = useState(false);
+  const [briefSaved, setBriefSaved] = useState(false);
 
   // Chat
   const [chatSending, setChatSending] = useState(false);
@@ -286,7 +414,7 @@ export default function SectorsPage() {
   }, []);
 
   // Mobile state
-  const [mobileTab, setMobileTab] = useState<"feed" | "agent" | "coverage">("feed");
+  const [mobileTab, setMobileTab] = useState<"feed" | "brief" | "coverage">("feed");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showAllSweep, setShowAllSweep] = useState(false);
 
@@ -366,10 +494,89 @@ export default function SectorsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Load investment mandate for the active sector from /api/agents/brief
+  const loadBrief = useCallback(async (key: string) => {
+    setBriefLoading(true);
+    setBriefEditing(false);
+    setBriefSaved(false);
+    try {
+      const res = await fetch(`/api/agents/brief?sector=${key}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBriefData(data as SectorBriefData);
+      }
+    } catch {
+      // Silent fail — defaults will show from the panel
+    } finally {
+      setBriefLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Brief edit handlers
+  const handleBriefEdit = useCallback(() => {
+    if (!briefData) return;
+    setBriefDraftBullets([
+      briefData.bullet_1,
+      briefData.bullet_2,
+      briefData.bullet_3,
+      briefData.bullet_4,
+      briefData.bullet_5,
+    ]);
+    setBriefEditing(true);
+  }, [briefData]);
+
+  const handleBriefBulletChange = useCallback((idx: number, value: string) => {
+    setBriefDraftBullets((prev) => {
+      const next = [...prev];
+      next[idx] = value;
+      return next;
+    });
+  }, []);
+
+  const handleSaveBrief = useCallback(async () => {
+    if (!activeKey || briefSaving) return;
+    setBriefSaving(true);
+    try {
+      const res = await fetch("/api/agents/brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sector_key: activeKey,
+          bullet_1: briefDraftBullets[0],
+          bullet_2: briefDraftBullets[1],
+          bullet_3: briefDraftBullets[2],
+          bullet_4: briefDraftBullets[3],
+          bullet_5: briefDraftBullets[4],
+        }),
+      });
+      if (res.ok) {
+        setBriefData((prev) => ({
+          sector_key: activeKey,
+          bullet_1: briefDraftBullets[0],
+          bullet_2: briefDraftBullets[1],
+          bullet_3: briefDraftBullets[2],
+          bullet_4: briefDraftBullets[3],
+          bullet_5: briefDraftBullets[4],
+          updated_at: new Date().toISOString(),
+          ...(prev && {}),
+        }));
+        setBriefEditing(false);
+        setBriefSaved(true);
+        setTimeout(() => setBriefSaved(false), 2500);
+      }
+    } catch {
+      // Silent fail
+    } finally {
+      setBriefSaving(false);
+    }
+  }, [activeKey, briefSaving, briefDraftBullets]);
+
   // Mark sector as read and load feed when switching sectors
   useEffect(() => {
     if (activeKey && agents.length > 0) {
       loadFeed(activeKey);
+      loadBrief(activeKey);
       // Mark as read — fire-and-forget
       fetch("/api/agents/read", {
         method: "POST",
@@ -381,7 +588,7 @@ export default function SectorsPage() {
         prev.map((a) => a.sector_key === activeKey ? { ...a, unread_count: 0 } : a)
       );
     }
-  }, [activeKey, agents.length, loadFeed]);
+  }, [activeKey, agents.length, loadFeed, loadBrief]);
 
   // Chat send (with optional image) — persists to Postgres via /api/agents/chat
   const handleSend = useCallback(async (msg: string, file: File | null, preview: string | null) => {
@@ -822,21 +1029,34 @@ export default function SectorsPage() {
         {/* RIGHT PANEL — 1/3 page width */}
         <div className="border-l border-gray-200 bg-white flex flex-col flex-shrink-0" style={{ width: "calc(33.333vw)", minWidth: "340px", maxWidth: "480px" }}>
           <div className="flex border-b border-gray-200">
-            {(["agent", "sector", "coverage"] as const).map((tab) => (
+            {(["brief", "sector", "coverage"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setRightTab(tab)}
-                className={`flex-1 px-2 py-2.5 text-xs font-medium capitalize transition-colors ${
+                className={`flex-1 px-2 py-2.5 text-xs font-medium transition-colors ${
                   rightTab === tab ? "text-gray-900 border-b-2 border-gray-900" : "text-gray-400 hover:text-gray-600"
                 }`}
               >
-                {tab === "sector" ? "Sector View" : tab}
+                {tab === "brief" ? "Sector Brief" : tab === "sector" ? "Sector View" : "Coverage"}
               </button>
             ))}
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            {active && rightTab === "agent" && <AgentPanel agent={active} />}
+            {active && rightTab === "brief" && (
+              <SectorBriefPanel
+                agent={active}
+                briefData={briefData}
+                briefLoading={briefLoading}
+                briefEditing={briefEditing}
+                briefDraftBullets={briefDraftBullets}
+                briefSaving={briefSaving}
+                briefSaved={briefSaved}
+                onEdit={handleBriefEdit}
+                onBulletChange={handleBriefBulletChange}
+                onSave={handleSaveBrief}
+              />
+            )}
 
             {rightTab === "sector" && (
               <div className="h-full flex flex-col">
@@ -1007,7 +1227,22 @@ export default function SectorsPage() {
             </div>
           )}
 
-          {mobileTab === "agent" && active && <div className="p-4"><AgentPanel agent={active} /></div>}
+          {mobileTab === "brief" && active && (
+            <div className="p-4">
+              <SectorBriefPanel
+                agent={active}
+                briefData={briefData}
+                briefLoading={briefLoading}
+                briefEditing={briefEditing}
+                briefDraftBullets={briefDraftBullets}
+                briefSaving={briefSaving}
+                briefSaved={briefSaved}
+                onEdit={handleBriefEdit}
+                onBulletChange={handleBriefBulletChange}
+                onSave={handleSaveBrief}
+              />
+            </div>
+          )}
           {mobileTab === "coverage" && active && <div className="p-3"><CoveragePanel agent={active} /></div>}
         </div>
 
@@ -1016,8 +1251,8 @@ export default function SectorsPage() {
         <div className="flex bg-white border-t border-gray-200">
           {([
             { key: "feed" as const, icon: "\uD83D\uDCAC", label: "Feed" },
-            { key: "agent" as const, icon: "\uD83E\uDD16", label: "Agent" },
-            { key: "coverage" as const, icon: "\uD83D\uDCCB", label: "Coverage" },
+            { key: "brief" as const, icon: "\uD83D\uDCCB", label: "Brief" },
+            { key: "coverage" as const, icon: "\uD83D\uDCCA", label: "Coverage" },
           ]).map((tab) => (
             <button
               key={tab.key}

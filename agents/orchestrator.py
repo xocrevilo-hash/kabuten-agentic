@@ -57,8 +57,17 @@ class KabutenOrchestrator:
         """Route OC chat message to the correct sector agent."""
         agent = self._agents.get(sector_key)
         if not agent:
-            return f"Unknown sector: {sector_key}"
-        return await agent.chat(message)
+            available = list(self._agents.keys())
+            raise ValueError(
+                f"Unknown sector key '{sector_key}'. "
+                f"Available keys: {available}"
+            )
+        try:
+            return await agent.chat(message)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Chat failed for sector '{sector_key}' ({agent.sector.designation}): {exc}"
+            ) from exc
 
     def get_agent(self, sector_key: str) -> SectorLeadAgent | None:
         """Get a sector lead agent by key."""

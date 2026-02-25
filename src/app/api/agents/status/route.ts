@@ -23,7 +23,7 @@ const AGENTS: Record<string, { designation: string; name: string; colour: string
   asean_ecommerce:           { designation: "TIDE",   name: "ASEAN E-commerce",             colour: "#14b8a6", companyIds: ["GRAB", "SE"] },
   ai_semis:                  { designation: "NOVA",   name: "AI Semis",                     colour: "#7c3aed", companyIds: ["2330", "NVDA", "AVGO", "AMD", "2454", "MRVL"] },
   mlccs:                     { designation: "FERRO",  name: "MLCCs",                        colour: "#b45309", companyIds: ["6981", "6762", "2327", "009150"] },
-  server_odms:               { designation: "RACK",   name: "Server ODMs",                  colour: "#475569", companyIds: ["2317", "2382", "3231"] },
+  server_odms:               { designation: "RACK",   name: "Server ODMs",                  colour: "#475569", companyIds: ["2317", "2382_TW", "3231"] },
 };
 
 /**
