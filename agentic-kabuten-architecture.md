@@ -577,6 +577,9 @@ Sweeps are staggered to stay within Vercel's 5-minute serverless function timeou
 - New (125 daily + 105 weekly): (125 × 7) + (105 × 1) = 980 Claude API calls/week
 - **Saving: ~40% reduction in token costs**
 
+**⚠️ Known sweep failure mode — batch count drift:**
+If new companies are added to the DB and the total APAC count exceeds (current batch count × 8), companies in the overflow batches silently never get swept — no error is thrown. `vercel.json` must have exactly `ceil(APAC_count / 8)` daily cron triggers and `ceil(total_count / 8)` Sunday triggers. **Always recount and update `vercel.json` after any company additions.** Also check: (a) Vercel auto-pauses cron jobs after repeated timeout failures — verify in Vercel Dashboard → Settings → Cron Jobs that all triggers show green; (b) verify the `country` field is correctly set for all Japan/Taiwan companies (`"Japan"` and `"Taiwan"` respectively, not `"US"`).
+
 **Sweep route modes:**
 - `?batch=N` — run batch N from DB (used by cron)
 - `?companyId=X` — run a single company (used by manual sweep button)
@@ -1385,20 +1388,20 @@ The Sectors page has been redesigned from a simple tab + two-column card layout 
 KabutenOrchestrator
 ├── APEX    → AU Enterprise Software     (5 companies)
 ├── ORIENT  → China Digital Consumption  (7 companies)
-├── VOLT    → DC Power & Cooling         (5 companies)
+├── VOLT    → DC Power & Cooling         (5 companies)  ← VRT, 3324.TW, 2308.TW, 6501.T, 2301.TW — VST removed
 ├── INDRA   → India IT Services          (4 companies)
 ├── HELIX   → Memory Semis              (7 companies)
 ├── PHOTON  → Networking & Optics        (8 companies)
 ├── FORGE   → Semi Equipment            (17 companies)
-├── CHARGE   → EV Supply-chain           (5 companies)
-├── SAGE   → China AI Apps             (2 companies)
+├── SURGE   → EV Supply-chain           (5 companies)
+├── SYNTH   → China AI Apps             (2 companies)
 ├── DRAGON  → China Semis              (5 companies)
-├── ELEMENT   → Japan Materials           (5 companies)
+├── TERRA   → Japan Materials           (5 companies)
 ├── PIXEL   → Gaming                    (5 companies)
-├── TRACE   → PCB Supply-chain          (4 companies)
-├── BAZAAR    → ASEAN E-commerce          (2 companies)
-├── NEXUS    → AI Semis                  (6 companies)
-├── LATTICE   → MLCCs                     (4 companies)
+├── LAYER   → PCB Supply-chain          (4 companies)
+├── TIDE    → ASEAN E-commerce          (2 companies)
+├── NOVA    → AI Semis                  (6 companies)
+├── FERRO   → MLCCs                     (4 companies)
 └── RACK    → Server ODMs               (3 companies)
      └── Each Sector Lead orchestrates N × CompanyCoverageAgent
 ```
@@ -1406,7 +1409,7 @@ KabutenOrchestrator
 **Agent roles:**
 
 - **KabutenOrchestrator** — top-level manager. Runs all 17 sector sweeps concurrently via `asyncio.gather`. Routes OC chat messages to the correct sector thread.
-- **SectorLeadAgent** (APEX / ORIENT / VOLT / INDRA / HELIX / PHOTON / FORGE / CHARGE / SAGE / DRAGON / ELEMENT / PIXEL / TRACE / BAZAAR / NEXUS / LATTICE / RACK) — one per sector (17 total). Orchestrates its CompanyCoverageAgents, synthesises findings into a sector view, escalates material findings for deep-dive analysis, maintains the persistent sector conversation thread, and converses with OC.
+- **SectorLeadAgent** (APEX / ORIENT / VOLT / INDRA / HELIX / PHOTON / FORGE / SURGE / SYNTH / DRAGON / TERRA / PIXEL / LAYER / TIDE / NOVA / FERRO / RACK) — one per sector (17 total). Orchestrates its CompanyCoverageAgents, synthesises findings into a sector view, escalates material findings for deep-dive analysis, maintains the persistent sector conversation thread, and converses with OC.
 - **CompanyCoverageAgent** — one per company (89 total across all 17 sectors). Sub-agent invoked by its parent SectorLead. Returns structured JSON findings. Runs at `effort="low"` for routine sweeps, `effort="high"` for escalated deep-dives. **94 CompanyCoverageAgents total** across 17 sectors.
 
 **Sonnet 4.6 features in use:**
@@ -1454,20 +1457,20 @@ All 7 sectors and 48 companies verified against the live database on 22 Feb 2026
 |---|---|---|
 | **APEX** | AU Enterprise Software | WTC–ASX, XRO–ASX, PME–ASX, REA–ASX, SEK–ASX |
 | **ORIENT** | China Digital Consumption | BABA–HKEX, BIDU–NASDAQ, NTES–NASDAQ, 700.HK–HKEX, TME–NYSE, TCOM–NASDAQ, PDD–NASDAQ |
-| **VOLT** | DC Power & Cooling | 3324.TW–TWSE, 2308.TW–TWSE, 6501.T–TSE, VST–NYSE, 2301.TW–TWSE |
+| **VOLT** | DC Power & Cooling | 3324.TW–TWSE, 2308.TW–TWSE, 6501.T–TSE, VRT–NYSE, 2301.TW–TWSE |
 | **INDRA** | India IT Services | INFY.NS–NSE, TCS.NS–NSE, TECHM.NS–NSE, WIPRO.NS–NSE |
 | **HELIX** | Memory Semis | 285A.T–TSE, MU–NASDAQ, 005930.KS–KRX, SNDK–NASDAQ, STX–NASDAQ, 000660.KS–KRX, 2408.TW–TWSE |
 | **PHOTON** | Networking & Optics | 2345.TW–TWSE, CLS–NYSE, COHR–NYSE, FN–NYSE, LITE–NASDAQ, 300394.SZ–SZSE, 300308.SZ–SZSE, 300502.SZ–SZSE |
 | **FORGE** | Semi Equipment | 688082.SS–SHSE, 6857.T–TSE, AMAT–NASDAQ, 3711.TW–TWSE, ASML–NASDAQ, 6146.T–TSE, 6361.T–TSE, 7741.T–TSE, KLAC–NASDAQ, 6525.T–TSE, LRCX–NASDAQ, 6920.T–TSE, 6323.T–TSE, 7735.T–TSE, 8035.T–TSE, 7729.T–TSE, 002371.SZ–SZSE |
-| **CHARGE** | EV Supply-chain | TSLA–NASDAQ, 1211.HK–HKEX, 300750.SZ–SZSE, 1810.HK–HKEX, 373220.KS–KRX |
-| **SAGE** | China AI Apps | 00100.HK–HKEX, 02513.HK–HKEX |
+| **SURGE** | EV Supply-chain | TSLA–NASDAQ, 1211.HK–HKEX, 300750.SZ–SZSE, 1810.HK–HKEX, 373220.KS–KRX |
+| **SYNTH** | China AI Apps | 00100.HK–HKEX, 02513.HK–HKEX |
 | **DRAGON** | China Semis | 688981.SS–SHSE, 688256.SS–SHSE, 688041.SS–SHSE, 603501.SS–SHSE, 688008.SS–SHSE |
-| **ELEMENT** | Japan Materials | 4004.T–TSE, 3110.T–TSE, 3436.T–TSE, 5016.T–TSE, 4062.T–TSE |
+| **TERRA** | Japan Materials | 4004.T–TSE, 3110.T–TSE, 3436.T–TSE, 5016.T–TSE, 4062.T–TSE |
 | **PIXEL** | Gaming | 7974.T–TSE, 6758.T–TSE, 9697.T–TSE, EA–NASDAQ, TTWO–NASDAQ |
-| **TRACE** | PCB Supply-chain | 007660.KS–KRX, 2368.TW–TWSE, 3037.TW–TWSE, 1303.TW–TWSE |
-| **BAZAAR** | ASEAN E-commerce | GRAB–NASDAQ, SE–NYSE |
-| **NEXUS** | AI Semis | 2330.TW–TWSE, NVDA–NASDAQ, AVGO–NASDAQ, AMD–NASDAQ, 2454.TW–TWSE, MRVL–NASDAQ |
-| **LATTICE** | MLCCs | 6981.T–TSE, 6762.T–TSE, 2327.TW–TWSE, 009150.KS–KRX |
+| **LAYER** | PCB Supply-chain | 007660.KS–KRX, 2368.TW–TWSE, 3037.TW–TWSE, 1303.TW–TWSE |
+| **TIDE** | ASEAN E-commerce | GRAB–NASDAQ, SE–NYSE |
+| **NOVA** | AI Semis | 2330.TW–TWSE, NVDA–NASDAQ, AVGO–NASDAQ, AMD–NASDAQ, 2454.TW–TWSE, MRVL–NASDAQ |
+| **FERRO** | MLCCs | 6981.T–TSE, 6762.T–TSE, 2327.TW–TWSE, 009150.KS–KRX |
 | **RACK** | Server ODMs | 2317.TW–TWSE, 2382.TW–TWSE, 3231.TW–TWSE |
 
 **Company name reference — all 17 sectors, 94 companies, verified 22 Feb 2026:**
@@ -1489,7 +1492,7 @@ All 7 sectors and 48 companies verified against the live database on 22 Feb 2026
 | 3324.TW | Auras Technology | DC Power & Cooling |
 | 2308.TW | Delta Electronics | DC Power & Cooling |
 | 6501.T | Hitachi | DC Power & Cooling |
-| VST | Vistra Corp | DC Power & Cooling |
+| VRT | Vertiv Holdings | DC Power & Cooling |
 | 2301.TW | Lite-On Technology | DC Power & Cooling |
 | INFY.NS | Infosys | India IT Services |
 | TCS.NS | Tata Consultancy Services | India IT Services |
@@ -1664,7 +1667,7 @@ CREATE TABLE IF NOT EXISTS sector_syntheses (
 CREATE INDEX IF NOT EXISTS idx_ss_sector_key ON sector_syntheses(sector_key);
 CREATE INDEX IF NOT EXISTS idx_ss_synthesised ON sector_syntheses(synthesised_at DESC);
 
--- Seed thread rows for all 7 agents
+-- Seed thread rows for all 17 sector agents
 INSERT INTO sector_agent_threads (sector_key, designation) VALUES
     ('au_enterprise_software',    'APEX'),
     ('china_digital_consumption', 'ORIENT'),
@@ -1672,8 +1675,34 @@ INSERT INTO sector_agent_threads (sector_key, designation) VALUES
     ('india_it_services',         'INDRA'),
     ('memory_semis',              'HELIX'),
     ('networking_optics',         'PHOTON'),
-    ('semi_equipment',            'FORGE')
+    ('semi_equipment',            'FORGE'),
+    ('ev_supply_chain',           'SURGE'),
+    ('china_ai_apps',             'SYNTH'),
+    ('china_semis',               'DRAGON'),
+    ('japan_materials',           'TERRA'),
+    ('gaming',                    'PIXEL'),
+    ('pcb_supply_chain',          'LAYER'),
+    ('asean_ecommerce',           'TIDE'),
+    ('ai_semis',                  'NOVA'),
+    ('mlccs',                     'FERRO'),
+    ('server_odms',               'RACK')
 ON CONFLICT (sector_key) DO NOTHING;
+
+-- ⚠️ CRITICAL SEEDING REQUIREMENTS (must run on first deploy, before any sweep):
+--
+-- 1. sector_briefs — seed default investment mandate bullets for all 17 sectors.
+--    The Sector Brief tab will be blank until this is done. Default bullets are
+--    defined in the "Sector Brief Tab — Default bullet points per sector" section above.
+--
+-- 2. sector_syntheses — populated automatically after the first successful sector agent
+--    sweep (cron at 22:00 UTC). No manual seeding needed — just ensure the sector agent
+--    cron runs successfully at least once.
+--
+-- 3. Coverage tab in the Sectors page reads from the companies table filtered by sector_group.
+--    If the Coverage tab is blank, the sector_group column is not populated correctly.
+--    All sector-grouped companies must have sector_group set to the exact sector_key value
+--    (e.g. 'semi_equipment', 'dc_power_cooling') — check with:
+--    SELECT ticker, sector_group FROM companies WHERE sector_group IS NOT NULL ORDER BY sector_group;
 ```
 
 ---
@@ -1682,7 +1711,7 @@ ON CONFLICT (sector_key) DO NOTHING;
 
 Add to the Next.js API layer (or FastAPI if Python backend):
 
-**`GET /api/agents/status`** — returns status of all 7 agents: designation, sector name, company count, thread length, colour.
+**`GET /api/agents/status`** — returns status of all 17 agents: designation, sector name, company count, thread length, colour.
 
 **`POST /api/agents/sweep`**
 ```json
@@ -1733,6 +1762,7 @@ await db.save_thread_history(sector_key, thread);
 - The `sector_group` field on the `companies` table continues to be used for peer context injection into individual company sweeps (existing behaviour unchanged).
 - `sector_group` values for the 48 sector companies must map to the 7 `sector_key` values: `au_enterprise_software`, `china_digital_consumption`, `dc_power_cooling`, `india_it_services`, `memory_semis`, `networking_optics`, `semi_equipment`.
 - **Agent role clarity:** Each Sector Lead Agent synthesises Investment Views and Daily Sweep results from its member Company Analyst Agents. It does not conduct independent internet research — the Company Agents do that. The Sector Lead's job is synthesis and pattern recognition across those company-level findings.
+- **⚠️ VOLT config.py fix required:** The `dc_power_cooling` sector in `agents/config.py` currently has `VST` (Vistra Corp) instead of `VRT` (Vertiv Holdings), and is missing `2301.TW` (Lite-On Technology). The correct 5 companies are: `3324.TW`, `2308.TW`, `6501.T`, `VRT`, `2301.TW`. Also update the DB: set `sector_group = 'dc_power_cooling'` for VRT and 2301.TW; set `sector_group = NULL` for VST.
 
 **Navigation:** The "Sectors" nav button in the sticky toolbar must show only the monochrome SVG building icon — **remove the 🏭 emoji**. Search for `🏭` in the navigation component and delete it. Keep the SVG icon and the word "Sectors".
 
@@ -1807,11 +1837,179 @@ Prepend `date_header()` to the system prompt string on every API call — sweeps
 1. Posture badge (↑ Bullish / → Neutral / ↓ Bearish) + conviction stars
 2. **Thesis** — full text, no truncation, wraps naturally in the wider 340px panel
 3. **Key Drivers** — up to 3 bullet items with `+` prefix (green)
-4. **Key Risks** — up to 3 bullet items with `–` prefix (red)
+4. **Key Risks** — up to 3 bullet items with `-` prefix (red)
 5. Thin horizontal divider
 6. **Companies in this sector** — compact list at the bottom of the panel showing every member company as a row: Company name · Ticker (mono font) · signal badge (`↑ BULL` / `→ NEUT` / `↓ BEAR`). Each row tappable → navigates to company page.
 
 The Coverage tab remains as before (full-width company list), but the Sector View tab now also shows the company list at the bottom so OC can see thesis + coverage without switching tabs.
+
+---
+
+#### Sector Brief Tab (replaces "Agent" tab)
+
+The right panel tab previously labelled **"Agent"** must be renamed to **"Sector Brief"**. This tab defines the investment mandate for the sector agent — what it should focus on, track, and optimise for.
+
+**Layout:**
+- Agent avatar, designation, sector name, last sweep timestamp (unchanged from Agent tab)
+- Section header: **"Investment Mandate"** in monospace label style
+- **5 editable bullet points** — the standing instructions that define what this agent prioritises in its coverage and recommendations
+- **Edit button** — small pencil icon (pencil emoji) top-right of the mandate section. On click: all 5 bullet points become editable inline text fields. Save button appears. On save: updated bullets written to `sector_briefs` DB table and included in the agent system prompt on next sweep/chat call.
+
+**Storage — `sector_briefs` table:**
+
+```sql
+CREATE TABLE IF NOT EXISTS sector_briefs (
+  sector_key TEXT PRIMARY KEY,
+  bullet_1 TEXT NOT NULL,
+  bullet_2 TEXT NOT NULL,
+  bullet_3 TEXT NOT NULL,
+  bullet_4 TEXT NOT NULL,
+  bullet_5 TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**API routes:**
+```
+GET  /api/agents/brief?sector=forge    -- returns current 5 bullets for sector
+POST /api/agents/brief                 -- body: { sector_key, bullet_1..5 } upsert
+```
+
+**Agent integration:** On every sweep and chat call, prepend the sector brief bullets to the system prompt:
+```python
+brief = load_sector_brief(sector_key)  # from DB
+brief_block = f"""
+Your investment mandate for this sector:
+1. {brief.bullet_1}
+2. {brief.bullet_2}
+3. {brief.bullet_3}
+4. {brief.bullet_4}
+5. {brief.bullet_5}
+"""
+# Prepend to system prompt before every API call
+```
+
+**Default bullet points per sector — seed these into `sector_briefs` on first deploy:**
+
+APEX (AU Enterprise Software):
+1. Track ARR growth and net revenue retention — the two metrics that determine long-term compounding
+2. Monitor competitive displacement of legacy on-premise systems by SaaS players
+3. Flag any pricing power evidence: seat expansion, ARPU growth, upsell rates
+4. Watch US/global expansion progress — TAM extension is the key re-rating catalyst
+5. Alert on any earnings guidance revision, analyst upgrade cycle, or multiple expansion triggers
+
+ORIENT (China Digital Consumption):
+1. Track monthly active user trends and monetisation rates across e-commerce and entertainment
+2. Monitor regulatory shifts from Beijing — platform economy rules are the dominant risk factor
+3. Flag any evidence of consumer spending recovery in China's domestic economy
+4. Watch competitive dynamics between platforms: who is taking share in AI-native features
+5. Alert on any ADR delisting risk, geopolitical escalation, or US-China trade policy impact
+
+VOLT (DC Power & Cooling):
+1. Track hyperscaler capex announcements — they are the primary demand signal for power and cooling equipment
+2. Monitor AI data centre buildout pace: rack density increases drive cooling intensity non-linearly
+3. Flag any utility-scale power constraint news — grid bottlenecks are the key sector risk
+4. Watch order backlog and lead time data — supply constraints drive margin expansion
+5. Alert on new product cycles: liquid cooling, direct-to-chip, and high-density UPS adoption curves
+
+INDRA (India IT Services):
+1. Track deal TCV (total contract value) and large deal wins — leading indicator of revenue 12-18 months out
+2. Monitor AI services adoption within existing client bases — the key re-rating narrative
+3. Flag rupee/USD FX moves and their margin impact for USD-revenue, INR-cost businesses
+4. Watch headcount and attrition data — execution capacity determines revenue conversion
+5. Alert on US visa policy changes, client budget freeze signals, or vertical-specific slowdowns
+
+HELIX (Memory Semis):
+1. Track HBM allocation and pricing — AI server demand is driving a structural premium over commodity DRAM
+2. Monitor DRAM and NAND contract price trends — the primary earnings swing factor
+3. Flag any capacity addition announcements: new fabs or technology node transitions affect supply balance
+4. Watch inventory levels across the supply chain — overhang signals are a leading warning indicator
+5. Alert on customer concentration risk (Nvidia, hyperscalers) or geopolitical supply disruption
+
+PHOTON (Networking & Optics):
+1. Track hyperscaler fibre and optical transceiver orders — 800G/1.6T adoption is the key growth vector
+2. Monitor silicon photonics adoption curve — this determines which vendors gain structural share
+3. Flag any co-packaged optics (CPO) milestone: a technology transition that reshapes the competitive landscape
+4. Watch capacity utilisation and ASP trends — pricing power confirms genuine demand vs inventory restocking
+5. Alert on any new datacom standard adoption, competitor product launch, or key customer design win
+
+FORGE (Semi Equipment):
+1. Track WFE (wafer fab equipment) spending guidance from TSMC, Samsung, and Intel — the primary demand driver
+2. Monitor export control developments: US restrictions on China sales are the dominant sector risk
+3. Flag technology inflection points: High-NA EUV ramp, GAA adoption, advanced packaging intensity increases
+4. Watch order book and book-to-bill ratio — leading indicators of revenue 6-12 months ahead
+5. Alert on any capacity expansion announcement, customer fab delay, or competitive displacement news
+
+SURGE (EV Supply-chain):
+1. Track EV penetration rates by market: China, Europe, and US are the three key demand theatres
+2. Monitor battery cost per kWh trends — cost parity with ICE is the structural inflection point
+3. Flag any government subsidy change, EV mandate policy, or tariff development in major markets
+4. Watch vertically integrated players (BYD, Tesla) vs supply chain specialists — margin flow matters
+5. Alert on raw material price moves (lithium, cobalt, nickel) and their battery cost pass-through impact
+
+SYNTH (China AI Apps):
+1. Track daily/monthly active users and revenue per user — commercial scale is the key validation metric
+2. Monitor foundation model benchmark performance vs US peers — technical parity is the re-rating catalyst
+3. Flag any regulatory development from Beijing's AI governance framework — approval cycles affect deployment
+4. Watch gross margin trajectory — inference cost reduction determines path to profitability
+5. Alert on any enterprise contract win, government deployment, or overseas market expansion evidence
+
+DRAGON (China Semis):
+1. Track domestic chip substitution progress — government mandates are accelerating adoption curves
+2. Monitor US Entity List additions and export control expansions — the dominant sector risk
+3. Flag any technology node advancement: closing the gap with TSMC/Samsung is the structural thesis
+4. Watch government subsidy flows and state-backed capex commitments — funding visibility matters
+5. Alert on any foundry capacity utilisation data, yield improvement milestones, or customer design wins
+
+TERRA (Japan Materials):
+1. Track semiconductor materials supply tightness — Japan controls critical chokepoints in the global chip supply chain
+2. Monitor export control developments from Japan's METI — materials restrictions have global ripple effects
+3. Flag customer inventory drawdown signals — semiconductor materials demand lags equipment by 1-2 quarters
+4. Watch yen moves and their impact on USD-reported margins for Japan-headquartered exporters
+5. Alert on any capacity expansion, new material qualification, or customer concentration shift
+
+PIXEL (Gaming):
+1. Track software title release schedules and attach rates — IP launches are the primary earnings catalyst
+2. Monitor console hardware cycle timing: next-gen transitions create both opportunity and disruption
+3. Flag mobile gaming monetisation trends — in-app purchase and live service revenue are the recurring base
+4. Watch AI-assisted game development adoption — cost reduction and release cadence improvement
+5. Alert on any major studio acquisition, competitive platform shift, or regulatory change on loot boxes/monetisation
+
+LAYER (PCB Supply-chain):
+1. Track AI server PCB and IC substrate order volumes — this is the highest-value tier of the supply chain
+2. Monitor substrate technology transitions: ABF (Ajinomoto Build-up Film) capacity is the bottleneck
+3. Flag customer concentration risk — a handful of hyperscalers and chipmakers dominate demand
+4. Watch lead times and ASP trends for high-layer-count PCBs — pricing power reflects genuine demand
+5. Alert on any new substrate technology qualification, capacity expansion, or competitive displacement
+
+TIDE (ASEAN E-commerce):
+1. Track GMV growth and take rate expansion — the two levers that compound into earnings power
+2. Monitor path to profitability: both Grab and Sea have moved from growth-at-all-costs to margin discipline
+3. Flag any regional regulatory development, particularly in Indonesia, Thailand, and Vietnam
+4. Watch fintech and digital financial services attach rates — the highest-margin revenue stream in the ecosystem
+5. Alert on competitive pressure from TikTok Shop, Temu, and Chinese cross-border players entering SEA
+
+NOVA (AI Semis):
+1. Track AI accelerator demand signals: hyperscaler capex, model training cluster announcements, inference buildout
+2. Monitor custom ASIC adoption (Google TPU, Amazon Trainium, Microsoft Maia) — the key threat to GPU incumbents
+3. Flag any US export control tightening on advanced AI chips — China revenue exposure is a major risk factor
+4. Watch HBM and CoWoS packaging supply constraints — they cap AI chip shipment volumes regardless of demand
+5. Alert on any new architecture announcement, competitive benchmark result, or foundry yield milestone
+
+FERRO (MLCCs):
+1. Track EV and AI server MLCC content per unit — both are structural demand drivers with multi-year runways
+2. Monitor MLCC pricing cycles — the market is highly cyclical and inventory corrections are sharp
+3. Flag capacity utilisation at Murata and TDK — the two oligopoly leaders set industry pricing
+4. Watch automotive qualification timelines — design wins take 18-24 months to reach revenue
+5. Alert on any commodity pricing move for base metals (nickel, palladium) used in MLCC electrodes
+
+RACK (Server ODMs):
+1. Track AI server rack assembly volumes and GB200/GB300 NVL rack build rates — the primary growth driver
+2. Monitor customer concentration: Nvidia allocations and hyperscaler direct orders determine revenue visibility
+3. Flag any supply chain bottleneck (HBM, CoWoS, power components) that caps rack shipment capacity
+4. Watch ASP trends for AI vs standard servers — mix shift to AI racks is the key margin expansion driver
+5. Alert on any new hyperscaler vendor qualification, white-box design win, or direct ODM-to-cloud deal
+
 
 ---
 

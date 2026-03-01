@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const AGENTS: Record<string, { designation: string; name: string; colour: string; companyIds: string[] }> = {
   au_enterprise_software:    { designation: "APEX",   name: "AU Enterprise Software",    colour: "#6366f1", companyIds: ["WTC", "XRO", "PME", "REA", "SEK"] },
   china_digital_consumption: { designation: "ORIENT", name: "China Digital Consumption",  colour: "#f59e0b", companyIds: ["9988", "BIDU", "NTES", "0700", "TME", "TCOM", "PDD"] },
-  dc_power_cooling:          { designation: "VOLT",   name: "DC Power & Cooling",         colour: "#ef4444", companyIds: ["3324", "2308", "6501", "VST", "2301"] },
+  dc_power_cooling:          { designation: "VOLT",   name: "DC Power & Cooling",         colour: "#ef4444", companyIds: ["3324", "2308", "6501", "VRT", "2301"] },
   india_it_services:         { designation: "INDRA",  name: "India IT Services",           colour: "#10b981", companyIds: ["INFY", "TCS", "TECHM", "WIPRO"] },
   memory_semis:              { designation: "HELIX",  name: "Memory Semis",                colour: "#8b5cf6", companyIds: ["285A", "MU", "005930", "SNDK", "STX", "000660", "2408"] },
   networking_optics:         { designation: "PHOTON", name: "Networking & Optics",          colour: "#06b6d4", companyIds: ["2345", "CLS", "COHR", "FN", "LITE", "300394", "300308", "300502"] },

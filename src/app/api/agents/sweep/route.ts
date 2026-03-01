@@ -5,15 +5,26 @@ export const maxDuration = 300;
 
 /**
  * Agent definitions — matches agents/config.py.
+ * All 17 sectors.
  */
 const AGENTS: Record<string, { designation: string; name: string; companyIds: string[] }> = {
-  au_enterprise_software:    { designation: "APEX",   name: "AU Enterprise Software",   companyIds: ["WTC", "XRO", "PME", "REA", "SEK"] },
-  china_digital_consumption: { designation: "ORIENT", name: "China Digital Consumption", companyIds: ["9988", "BIDU", "NTES", "0700", "TME", "TCOM"] },
-  dc_power_cooling:          { designation: "VOLT",   name: "DC Power & Cooling",        companyIds: ["3324", "2308", "6501", "VST"] },
-  india_it_services:         { designation: "INDRA",  name: "India IT Services",          companyIds: ["INFY", "TCS", "TECHM", "WIPRO"] },
-  memory_semis:              { designation: "HELIX",  name: "Memory Semis",               companyIds: ["285A", "MU", "005930", "SNDK", "STX", "000660"] },
-  networking_optics:         { designation: "PHOTON", name: "Networking & Optics",         companyIds: ["2345", "CLS", "COHR", "FN", "LITE", "300394", "300308"] },
-  semi_equipment:            { designation: "FORGE",  name: "Semi Equipment",              companyIds: ["688082", "6857", "AMAT", "3711", "ASML", "6146", "6361", "7741", "KLAC", "6525", "LRCX", "6920", "6323", "7735", "8035", "7729"] },
+  au_enterprise_software:    { designation: "APEX",   name: "AU Enterprise Software",    companyIds: ["WTC", "XRO", "PME", "REA", "SEK"] },
+  china_digital_consumption: { designation: "ORIENT", name: "China Digital Consumption",  companyIds: ["9988", "BIDU", "NTES", "0700", "TME", "TCOM", "PDD"] },
+  dc_power_cooling:          { designation: "VOLT",   name: "DC Power & Cooling",         companyIds: ["3324", "2308", "6501", "VRT", "2301"] },
+  india_it_services:         { designation: "INDRA",  name: "India IT Services",           companyIds: ["INFY", "TCS", "TECHM", "WIPRO"] },
+  memory_semis:              { designation: "HELIX",  name: "Memory Semis",                companyIds: ["285A", "MU", "005930", "SNDK", "STX", "000660", "2408"] },
+  networking_optics:         { designation: "PHOTON", name: "Networking & Optics",          companyIds: ["2345", "CLS", "COHR", "FN", "LITE", "300394", "300308", "300502"] },
+  semi_equipment:            { designation: "FORGE",  name: "Semi Equipment",               companyIds: ["688082", "6857", "AMAT", "3711", "ASML", "6146", "6361", "7741", "KLAC", "6525", "LRCX", "6920", "6323", "7735", "8035", "7729", "002371"] },
+  ev_supply_chain:           { designation: "SURGE",  name: "EV Supply-chain",              companyIds: ["TSLA", "1211", "300750", "1810", "373220"] },
+  china_ai_apps:             { designation: "SYNTH",  name: "China AI Apps",                companyIds: ["0100", "2513"] },
+  china_semis:               { designation: "DRAGON", name: "China Semis",                  companyIds: ["688981", "688256", "688041", "603501", "688008"] },
+  japan_materials:           { designation: "TERRA",  name: "Japan Materials",              companyIds: ["4004", "3110", "3436", "5016", "4062"] },
+  gaming:                    { designation: "PIXEL",  name: "Gaming",                       companyIds: ["7974", "6758", "9697", "EA", "TTWO"] },
+  pcb_supply_chain:          { designation: "LAYER",  name: "PCB Supply-chain",             companyIds: ["007660", "2368", "3037", "1303"] },
+  asean_ecommerce:           { designation: "TIDE",   name: "ASEAN E-commerce",             companyIds: ["GRAB", "SE"] },
+  ai_semis:                  { designation: "NOVA",   name: "AI Semis",                     companyIds: ["2330", "NVDA", "AVGO", "AMD", "2454", "MRVL"] },
+  mlccs:                     { designation: "FERRO",  name: "MLCCs",                        companyIds: ["6981", "6762", "2327", "009150"] },
+  server_odms:               { designation: "RACK",   name: "Server ODMs",                  companyIds: ["2317", "2382_TW", "3231"] },
 };
 
 /**

@@ -157,6 +157,27 @@ export async function POST() {
       RETURNING id
     `;
 
+    // 3b. Fix VOLT sector_group: remove Vistra (VST), add Vertiv (VRT) and Lite-On (2301)
+    await sql`
+      UPDATE companies SET sector_group = NULL
+      WHERE id = 'VST' AND sector_group = 'dc_power_cooling'
+    `;
+    await sql`
+      UPDATE companies SET sector_group = 'dc_power_cooling'
+      WHERE id IN ('VRT', '2301')
+        AND (sector_group IS NULL OR sector_group != 'dc_power_cooling')
+    `;
+
+    // 3c. Backfill country from exchange for any APAC companies where country is NULL/empty.
+    // This covers the case where companies were seeded before the country column was added.
+    await sql`UPDATE companies SET country = 'Japan'      WHERE exchange = 'TSE'              AND (country IS NULL OR country = '')`;
+    await sql`UPDATE companies SET country = 'Taiwan'     WHERE exchange = 'TWSE'             AND (country IS NULL OR country = '')`;
+    await sql`UPDATE companies SET country = 'Korea'      WHERE exchange = 'KRX'              AND (country IS NULL OR country = '')`;
+    await sql`UPDATE companies SET country = 'Hong Kong'  WHERE exchange = 'HKEX'             AND (country IS NULL OR country = '')`;
+    await sql`UPDATE companies SET country = 'China'      WHERE exchange IN ('SSE', 'SZSE')   AND (country IS NULL OR country = '')`;
+    await sql`UPDATE companies SET country = 'India'      WHERE exchange = 'NSE'              AND (country IS NULL OR country = '')`;
+    await sql`UPDATE companies SET country = 'Australia'  WHERE exchange = 'ASX'              AND (country IS NULL OR country = '')`;
+
     // 4. Ensure all 17 sector_agent_threads rows exist (including RACK)
     const agentSeeds: [string, string][] = [
       ['au_enterprise_software', 'APEX'],
@@ -197,6 +218,8 @@ export async function POST() {
         sector_briefs_table: "created or already exists",
         briefs_seeded: briefsSeeded,
         quanta_sector_group_fixed: quantaFix.length > 0,
+        volt_sector_group_fixed: "VST removed, VRT+2301 added to dc_power_cooling",
+        country_backfill: "Japan/Taiwan/Korea/HK/China/India/Australia backfilled from exchange",
         threads_ensured: threadsEnsured,
       },
     });
